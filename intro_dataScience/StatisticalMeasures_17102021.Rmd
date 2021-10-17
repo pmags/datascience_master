@@ -1,0 +1,175 @@
+---
+title: "List & explain Statistical Measures of a distribution"
+author: "Pedro Magalhães - 200202298 "
+subtitle: Introduction to Data Science homework - 17/11/2021
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+# Population and sample 
+
+All statistical measures present on this report will be calculated using a sample of 100 observations of a population of a continuous variable which closely follows a Beta distribution  with $\alpha = 1$ and $\beta = 5$.
+
+
+```{r}
+# set seed for random variables
+set.seed(321)
+
+# libraries
+library(ggplot2)
+
+# plot density function
+pop <- data.frame(observation =rbeta(10000,1,5) * 80)
+
+ggplot(pop, aes( x = observation )) + 
+  geom_density(color = "red") +
+  labs(title = "Population density plot") +
+  theme_classic()
+
+```
+
+```{r}
+set.seed(321)
+sample <- data.frame(obs = round(rbeta(100,1,5) * 80, 0))
+
+# ploting histogram for sample and density plot
+
+sample_plot <- ggplot(sample, aes(x = obs )) +
+  geom_histogram( bins = 10, colour = "black", fill = "white" ) +
+  theme_classic() 
+
+sample_plot + labs(title = "Sample histogram")
+
+```
+
+The data used on this exercise is therefore right skewed (eg: age distribution of a day center with kindergarden and elderly support) which affects the main calculation and interpretation of the main statistical measures.
+
+# Measures of centrality
+
+```{r include=FALSE}
+# calculates the centrality measures for our sample data
+measures <- summary(round(rbeta(100,1,5) * 80, 0))
+
+mean <- as.numeric(measures["Mean"])
+median <- as.numeric(measures["Median"])
+
+# base R has no function for mode
+
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+mode <- Mode(round(rbeta(100,1,5) * 80, 0))
+
+```
+
+
+## Mean
+
+**Wikipedia definition:** In mathematics and statistics, the arithmetic mean, or simply the mean or the average (when the context is clear), is the sum of a collection of numbers divided by the count of numbers in the collection.
+
+Therefore, given a sample of $\{x_1, x_2, ..., x_n \}$ the the average $\overline{x}$ is defined as follows
+
+$$\overline{x} = \frac{1}{n}\sum_{i=1}^nx_i $$
+
+
+```{r}
+sample_plot +
+  labs(title =  "Sample histogram with mean" ) +
+  geom_vline(aes(xintercept = mean), color = "blue", linetype = "dashed", size = 1) +
+  geom_text(aes(x = mean +1  ), label="mean", y = 30, angle = 90, colour = "blue")
+
+```
+Given the skewed nature of our sample data the interpretation of the mean should be done with caution since its not a suitable measure to describe the above distribution and does not provide a "true" center.
+
+## Median
+
+**Wikipedia definition:** In statistics and probability theory, the median is the value separating the higher half from the lower half of a data sample, a population, or a probability distribution. For a data set, it may be thought of as "the middle" value. 
+
+The median represents the percentile 50 of a distribution
+
+
+```{r}
+
+sample_plot +
+  labs(title =  "Sample histogram with median & mean" ) +
+  geom_vline(aes(xintercept = mean), color = "blue", linetype = "dashed", size = 1) +
+  geom_text(aes(x = mean + 1 ), label=paste("mean = ", mean) , y = 30, angle = 90, colour = "blue") +
+  geom_vline(aes(xintercept = median), color = "green", linetype = "dashed", size = 1) +
+  geom_text(aes(x = median + 1 ), label = paste("median = ", median) , y = 30, angle = 90, colour = "green")
+
+```
+
+## Mode
+
+**Wikipedia definition:** The mode is the value that appears most often in a set of data values. 
+
+In our scenario it shows us that most observations are of the value 5.
+
+```{r}
+
+sample_plot +
+  labs(title =  "Sample histogram with median & mean" ) +
+  geom_vline(aes(xintercept = mean), color = "blue", linetype = "dashed", size = 1) +
+  geom_text(aes(x = mean + 1 ), label=paste("mean = ", mean) , y = 30, angle = 90, colour = "blue") +
+  geom_vline(aes(xintercept = median), color = "green", linetype = "dashed", size = 1) +
+  geom_text(aes(x = median + 1 ), label = paste("median = ", median) , y = 30, angle = 90, colour = "green") +
+  geom_vline(aes(xintercept = mode), color = "red", linetype = "dashed", size = 1) +
+  geom_text(aes(x = mode + 1 ), label = paste("mode = ", mode) , y = 30, angle = 90, colour = "red")
+
+```
+
+
+# Measures of dispersion
+
+```{r include=FALSE}
+min <- as.numeric(measures["Min."])
+max <- as.numeric(measures["Max."])
+range <- max - min
+Q1 <- as.numeric(measures["1st Qu."])
+Q3 <- as.numeric(measures["3rd Qu."])
+IQR <- Q3 - Q1
+sd <- sd(round(rbeta(100,1,5) * 80, 0))
+var <- sd ^2
+
+```
+
+
+## Range
+
+**Wikipedia definition:** In statistics, the range of a set of data is the difference between the largest and smallest values.[1] Difference here is specific, the range of a set of data is the result of subtracting the sample maximum and minimum.
+
+```{r}
+sample_plot +
+  labs(title =  paste("Sample histogram with range of", range) ) +
+  annotate("rect",xmin = min, xmax = max, ymin = 0, ymax = Inf, fill = "red", alpha = 0.2)
+```
+
+
+## Variance & Standard deviation
+
+**Wikipedia definition:** In statistics, the standard deviation is a measure of the amount of variation or dispersion of a set of values.[1] A low standard deviation indicates that the values tend to be close to the mean (also called the expected value) of the set, while a high standard deviation indicates that the values are spread out over a wider range.
+
+Therefore, given a sample of $\{x_1, x_2, ..., x_n \}$ the the standard deviation $\overline{x}$ is defined the squared root of the variation:
+
+$$s = \sqrt{\frac{1}{n}\sum_{i=1}^n (x_i - \overline{x} )^2}  $$
+Given the the skewed nature of our sample the varianace and standard deviation does not provide a "true" image on the dispersion around the mean. In order to understand the dispersion of this distibution it is advisable to use the Quartiles and inter quartiles information.
+
+
+## Quartiles and InterQuartile Range
+
+**Wikipedia definition:**  In statistics, a quartile is a type of quantile which divides the number of data points into four parts, or quarters, of more-or-less equal size. The data must be ordered from smallest to largest to compute quartiles; as such, quartiles are a form of order statistic.
+
+```{r}
+sample_plot +
+  labs(title =  paste("Sample histogram with IQR of", IQR) ) +
+  annotate("rect",xmin = Q1, xmax = Q3, ymin = 0, ymax = Inf, fill = "green", alpha = 0.2)
+```
