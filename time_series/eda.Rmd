@@ -1,0 +1,533 @@
+---
+title: "Exploratory Time Series Analysis "
+author: "Maria Eduarda Silva"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R and Packages
+
+There are several R packges for time series. We will use astsa developed by Stoffer, forecast developed by Hyndman and co-authors and fpp also from Hyndman containing many time series data sets. 
+
+Install the packages
+
+```{r message=TRUE, warning=TRUE, paged.print=TRUE}
+install.packages(c("fpp2","forecast","astsa"),repos=c(CRAN = "http://cran.rstudio.com"))
+```
+
+
+then call them all 
+```{r include=FALSE}
+library(astsa)
+library(fpp2)
+library(forecast)
+```
+
+The code to reproduce some of the figures of the slides - Introduction - follows. 
+
+A time series can be thought of as a list of numbers, along with some information about what times those numbers were recorded. This information can be stored as a ts() object in R.
+The graphical representation of  time series data is a time plot: the observations are plotted against the time of observation, with consecutive observations joined by straight lines.
+
+Simulate a time series that are just iid observations, declare it as ts object and plot.
+Using astsa
+```{r,fig.height=10}
+w = rnorm(120,0,1)
+plot(w)# did not declare w as ts() object 
+w=ts(w,start=2010,frequency=12)
+plot(w)
+tsplot(w)
+```
+
+If you have annual data, with one observation per year, you only need to provide the starting year (or the ending year).
+For observations that are more frequent than once per year, you  add a frequency argument. For example, if your  data is monthly then you declare frequency=12 but if it is weekly you must declare frequency=52. 
+
+The same using package forecast
+
+```{r}
+autoplot(w) +
+  ggtitle("White noise") +
+  ylab("w") +
+  xlab("Year")
+```
+
+The lagplot (using astsa)
+
+```{r}
+lag1.plot(w,12)
+```
+
+The lagplot (using forecast)
+
+```{r}
+gglagplot(w)
+```
+
+## Exploratory Data Analysis with time series
+
+When dealing with time series data , it is the dependence between observations that is important to measure - it is important to understand the dynamics in the data. Dynamics means the temporal evolution. If we understand the dynamics we can use mathematical models represent, even if only approximately, those dynamics and we can reproduce them and project them in the future. 
+
+We start by understanding the main components of a time series and how to best represent the data. Let's represent the Monthly Carbon Dioxide Levels at Mauna Loa, March 1958 to November 2018
+
+  
+```{r}
+library(astsa)
+data(cardox,package="astsa")
+str(cardox)
+tsplot(cardox, ylab="ppm", main="Monthly Carbon Dioxide Levels at Mauna Loa, March 1958 to November 2018")
+```
+ The data is increasing steadily over time (bad news for the environment!), thus we say that there is a trend because the data is not around a constant mean.  We also note almost perfect cycles. The following plot shows that the cycles are annual- 12 months between any two peaks or any two throughs.
+ 
+```{r}
+tsplot(window(cardox,start=2000,end=2010), ylab="ppm", main="Monthly Carbon Dioxide Levels, Jan 2000 to Dec 2010",type="b")
+```
+ 
+ This data set illustrates two of the most common time series components: trend and seasonality. In general the main components of a time series are:
+
+  + trend- long term change in the mean of the data 
+  + seasonality- cycles within one year usually related to the seasons of the year; it is fixed and the frequency is known $S_t$
+  + cycles- raises and falls in the data with unknown frequency- 
+  + random or remainder component $R_t$ with some desirable properties that will be introduced later
+  
+  Usually trend and cycle are included in the same component, a trend-cycle component $T_t$
+  In this example the trend looks approximately linear, and the seasonal cycles have constant over time- we say that a linear model may be appropriate
+   $$y_t=T_t+ S_t + R_t$$
+   
+
+```{r}
+library(fpp2)
+str(a10)
+tsplot(a10, main="Monthly scripts of A10", ylab="")
+```
+
+ In the next example the trend is non linear and the amplitude of the seasonal cycles grows with the trend. This effect is called heterocedasticity (changing variance) and we need a multiplicative model to represent the relationship between the components
+  
+   $$y_t=T_t S_t R_t$$
+   
+For a clear representation of the seasonal patterns we may use the following plots.
+
+
+```{r}
+ggmonthplot(cardox)+
+  ylab("ppm") +
+  ggtitle("Seasonal plot: Cabon dioxine ")
+```
+
+The blue lines represent the mean of the corresponding month. Be careful because this mean has no meaning since the data presents trend. 
+
+```{r}
+ggseasonplot(cardox)
+
+```
+
+In the subseries there is no evidence of heteroscedasticity.
+The following represents the same plot with the time axis circular rather than horizontal
+
+
+```{r}
+ggsubseriesplot(a10, year.labels=TRUE, year.labels.left=TRUE) +
+  ylab("$ million") +
+  ggtitle("Seasonal plot: antidiabetic drug sales")
+```
+
+```{r}
+ggseasonplot(a10, year.labels=TRUE, year.labels.left=TRUE) +
+  ylab("$ million") +
+  ggtitle("Seasonal plot: antidiabetic drug sales")
+```
+
+From the above two plots it is clear that the variability increases with the trend or time.
+   
+ To stabilize  the variability over the series  we use the Box-Cox transformations. A particular case is to log the data. Note that  the multiplicative representation  $$y_t=T_t S_t R_t$$ becomes  $$log(y_t) = log (T_t) + log (S_t)+ log( R_t) $$
+ 
+
+\[ U_t=\left \{ \begin{array}{ccc} 
+               \frac{X_t^\lambda-1}{\lambda} & {if}
+&  \lambda \neq 0 \\
+                \log X_t & if & \lambda=0
+               \end{array}
+\right .
+\]
+
+These transforms are also used to improve approximation to normality (Gaussian distribution). 
+
+```{r}
+par(mfrow=c(2,1))
+autoplot((a10)) +
+  ggtitle("Antidiabetic drug sales") +
+  ylab("$ million") +
+  xlab("Year")
+autoplot(log(a10)) +
+  ggtitle("Log Antidiabetic drug sales") +
+  ylab("log ($ million)") +
+  xlab("Year")
+```
+
+Now the variance is stable and the trend looks linear. Produce the season plots for the log data and comment.
+
+To find the best Box-Cox transform - find  $\lambda$ that minimizes the variance.
+
+```{r}
+a10.lambda=BoxCox.lambda(a10)
+a10.lambda
+a10.BC=BoxCox(a10,lambda=a10.lambda)
+autoplot(a10.BC) +
+  ggtitle("Box-Cox Antidiabetic drug sales") +
+  ylab("") +
+  xlab("Year")
+```
+
+  
+Plot the time series and check for:
+
++ trend 
++ discontinuities such as level changes
++ changes in variance 
++ seasonality 
++ cycles
++ unusual observations- outliers 
+
+
+Depending on the purpose of our study, when we analyse a time series the interest may be in studying  the trend, the seasonality, the cycles or the remainder component. 
+
+Also the following example indicates that the presence of a trend hinders the detection of seasonality. 
+
+```{r}
+tsplot(cardox, ylab="ppm", main="Monthly Carbon Dioxide Levels, Jan 2000 to Dec 2010")
+ggmonthplot(cardox)+
+  ylab("ppm") +
+  ggtitle("Seasonal plot: Cabon dioxine ")
+```
+
+Remember that a mean is meaningful only if the data are observations of  underlying variables with a common mean. In others words, it does not make sense to compute means in the presence of a trend.
+
+Next we see some approaches  for estimating and/or removing trend and seasonality components. Sometimes these components are just filtered out the component so that the remaining components  become more pronounced. 
+
+### Time series with trend
+
+For time series with trend we have several options
+
+estimate the trend with a deterministic function linear, quadratic, etc 
+
+filter the data with the difference operator
+
+smooth the time series 
+
+```{r}
+data(chicken,package="astsa")
+str(chicken)
+tsplot(chicken, ylab="cents per pound", main="Price of chicken in US (constant) dollars, Aug 2001 to July 2016")
+```
+
+```{r}
+lag1.plot(chicken,12)
+```
+
+
+
+Now we are going to detrend the time series using a linear model
+
+```{r}
+summary(fit <- lm(chicken~time(chicken))) # regress price on time
+```
+
+
+The model for the chicken is : $\hat{x}_t=-7131+3.59t+\hat{y}_t$ and $\hat{y}_t=x_t+7131-3.59t$ is the detrended series. 
+The detrended series shows a cycle (business cycle) approximately of 5 years. 
+
+
+```{r}
+par(mfrow=c(2,1))
+tsplot(chicken, ylab="cents per pound", col=4, lwd=2)
+abline(fit)           # add the fitted regression line to the plot
+tsplot(resid(fit), main="detrended")
+lag1.plot(resid(fit),12)
+```
+
+
+Another approach is to filter the time series with the **difference operator**, $\nabla= 1-B$ where $B$ is the **lag operator** $B x_t=x_{t-1}$. So $$\nabla x_t = (1-B ) x_t =x_t -B x_{t} = x_t- x_{t-1}$$
+
+The resulting time series $y_t=\nabla x_t$ represents the increments or change of $x$ on consecutive time points. Take the price of chicken, $x_t$. Then $y_t = x_t- x_{t-1}$ represents the monthly increase of price: from January to February, February to March, etc.
+
+```{r}
+par(mfrow=c(2,1))
+tsplot(chicken, ylab="cents per pound", col=4, lwd=2)
+tsplot(diff(chicken), ylab="cents per pound", col=4, lwd=2, main="Price of chicken differenced")
+```
+
+```{r}
+lag1.plot(diff(chicken),12)
+```
+
+
+Both approaches seem to remove the trend but the implications for modeling and forecasting are very different as we shall see later.
+
+
+A third approach to removing the trend is by smoothing techniques. These are applied for discovering certain traits such as long-term trend but may also be applied to find seasonal components. The idea is to construct $m_t$ as a possibly weighted average of $x_t$ and a certain number $k$ of neighbouring observations. $k$ and the weights lead to different smoothers. Typically smoothing removes high frequency movements associated with randomness/noise /uncontrolable variability.The most common are the moving averages, kernel and Lowess. 
+#### Moving averages
+
+Averaging consecutive observations of the time series constitutes a moving average smoother $$m_t=\sum_{i=-k}^{k} a_i x_{t-i}$$
+Depending on the weights $a_i$ we extract the desired feature. 
+
+
+#### Kernel smoothing
+
+This is a moving average smoother that uses a smooth continous  weight function or kernel to average the observations
+$$m_t=\sum_{i=i}^{n} w_i(t) x_{t-i}$$ 
+
+#### Lowess
+
+Lowess is a robust weighted regression smoothing method close to nearest neighbour regression. It is a locally-weighted polynomial regression for smoothing time series. It is implemented in R lowess and loess functions.
+
+Example of three smoothers.
+
+```{r}
+w=c(0.5, rep(1,11),.5)/12
+soif=filter(soi,sides=2,filter=w)
+plot(soi,col=rgb(.5,.6,.85,.9),ylim=c(-1,1.15))
+lines(soif,lwd=2,col=4)
+lines(ksmooth(time(soi),soi,"normal"),lwd=2, col=5)
+lines(lowess(soi),lty=2,lwd=2,col=6)
+legend(x=1980,y=1,legend=c("MA","kernel","lowess"), text.col=c(4,5,6))
+```
+
+### Time series with trend and seasonality
+
+Consider the 2 time series SOI (Southern Oscillation Index) and Rec (index of the number of recruited fish) from the package astsa. 
+
+```{r}
+par(mfrow = c(2,1))
+tsplot(soi, ylab= "", xlab= "", main= "Southern Oscillation Index", col=4)
+text(1970,.91,"COOL",col="cyan4")
+text(1970,-.91,"WARM",col="darkmagenta")
+tsplot(rec, ylab= "", xlab= "", main= "Recruitment", col=4)
+```
+
+```{r}
+#par(mfrow = c(2,1))
+monthplot(soi)
+monthplot(rec)
+```
+```{r}
+#par(mfrow = c(2,1))
+seasonplot(soi)
+seasonplot(rec)
+```
+
+
+To estimate/remove the seasonal component we use similar approach to the approach for trend. 
+
++ filter the data with the seasonal difference operator
++ regression approach with dummy variables for the days of the week or the months or Fourier series
+
+
+For the regression approach refer to  Chapter 5.4 of Forecasting: Principles and Practice by Hyndaman, OTexts and  function tlsm() from the forecast package. The following example is extracted from this reference.
+
+```{r}
+beer2 <- window(ausbeer, start=1992)
+autoplot(beer2) + ggtitle("Australian quarterly beer production") + xlab("Year") + ylab("Megalitres")
+```
+
+```{r}
+lag1.plot(beer2,12)
+```
+
+The lagplot (using forecast)
+
+```{r}
+gglagplot(beer2)
+```
+
+
+We can model this data using a regression model with a linear trend and quarterly dummy variables,
+$$y_t= \beta_0+\beta_1 t +\beta_2 d_{2,t}+\beta_3 d_{3,t}+\beta_4 d_{4,t}+ R_t$$
+
+where  $d_{i,t}=1$ if $t$ is in quarter $i$ and 0 otherwise. The first quarter variable has been omitted, so the coefficients associated with the other quarters are measures of the difference between those quarters and the first quarter.
+
+```{r}
+fit.beer <- tslm(beer2 ~ trend + season)
+summary(fit.beer)
+```
+
+Note that trend and season are not objects in the R workspace; they are created automatically by tslm() when specified in this way.
+
+There is an average downward trend of -0.34 megalitres per quarter. On average, the second quarter has production of 34.7 megalitres lower than the first quarter, the third quarter has production of 17.8 megalitres lower than the first quarter, and the fourth quarter has production of 72.8 megalitres higher than the first quarter.
+
+
+```{r}
+autoplot(beer2, series="Data") +
+  autolayer(fitted(fit.beer), series="Fitted") +
+  xlab("Year") + ylab("Megalitres") +
+  ggtitle("Quarterly Beer Production")
+tsplot(residuals(fit.beer), main = "detrended desasonalized beer data")
+```
+
+The dummy variables may be used to model also interventions, holidays and other effects.
+
+The alternative is to represent the seasonality as sums of sines and cosines- a Fourier series. $K$ represents the number of pairs sine, cosine, $K \leq S/2.$ 
+
+```{r}
+fourier.beer <- tslm(beer2 ~ trend + fourier(beer2, K=2))
+summary(fourier.beer)
+autoplot(beer2, series="Data") +
+  autolayer(fitted(fourier.beer), series="Fitted") +
+  xlab("Year") + ylab("Megalitres") +
+  ggtitle("Quarterly Beer Production")
+tsplot(residuals(fourier.beer), main = "detrended desasonalized beer data")
+seasonplot(residuals(fourier.beer))
+```
+
+The advantage of Fourier over dummies is when $S$ is large, for example $S=52$ weekly data, since usually less terms are needed. 
+
+How to compare the two models? This is an important issue that we shall see later.
+
+#### Seasonal difference operator
+
+The seasonal difference operator is defined as $\nabla^S=1-B^S$, where $S$ is the seasonality. Remember that $B^S x_t= x_{t-S}$ so $\nabla^S x_t= x_t - x_{t-S}$
+
+
+```{r}
+par(mfrow=c(2,1))
+tsplot(cardox)
+tsplot(diff(cardox,12))
+monthplot(diff(cardox,12))
+```
+
+ The seasonal differences remove the seasonality but some trend still remains. Next we filter the data with both operators, simple and seasonal and note that the filtered data data no longer presents trend or seasonality.
+ 
+
+```{r}
+par(mfrow=c(2,1))
+tsplot(cardox)
+tsplot(diff(diff(cardox),12))
+```
+
+```{r}
+lag1.plot(diff(diff(cardox)),12)
+```
+ 
+
+ The Seasonal Decomposition of Time Series by Loess is implemented in R in the stl() function and decomposes a time series into seasonal, trend and irregular components using loess. The seasonal component is found by loess smoothing the seasonal sub-series (the series of all January values, ...); if s.window = "periodic" smoothing is effectively replaced by taking the mean. The seasonal values are removed, and the remainder smoothed to find the trend. The overall level is removed from the seasonal component and added to the trend component. This process is iterated a few times. The remainder component is the residuals from the seasonal plus trend fit.
+
+```{r}
+cardox.stlper=stl(cardox, s.window="periodic")
+cardox.stl=stl(cardox, s.window=13)
+plot(cardox.stlper)
+plot(cardox.stl)
+```
+```{r}
+cardox.stlper$time.series[1:24,]
+cardox.stl$time.series[1:24,]
+```
+
+ 
+```{r}
+beer.stlper=stl(beer2, s.window="periodic")
+beer.stl=stl(beer2, s.window=13)
+plot(beer.stl)
+```
+
+Let's investigate the correlation behaviour of the remainder.
+
+```{r}
+lag1.plot(beer2,12)
+lag1.plot(beer.stl$time.series[,3],12)
+```
+
+The correlation in the series remainder is much less than in the original time series. Most of the trend and seasonality has been removed but there is still correlation in the data that must be accounted for.
+
+
+## Multiple time series
+
+
+A final example concerns establishing relationships between several time series.
+Study the possible effects of temperature and pollution on weekly mortality in Los Angeles County. 
+
+```{r}
+culer = c(rgb(.66,.12,.85), rgb(.12,.66,.85), rgb(.85,.30,.12))
+par(mfrow=c(3,1))
+tsplot(cmort, main="Cardiovascular Mortality", col=culer[1], type="o", pch=19, ylab="")
+tsplot(tempr, main="Temperature", col=culer[2], type="o", pch=19, ylab="")
+tsplot(part, main="Particulates", col=culer[3], type="o", pch=19, ylab="")
+```
+
+```{r}
+tsplot(cmort, main="", ylab="", ylim=c(20,130), col=culer[1])
+lines(tempr, col=culer[2])
+lines(part, col=culer[3])   
+legend("topright", legend=c("Mortality", "Temperature", "Pollution"), lty=1, lwd=2, col=culer, bg="white")
+```
+
+The plots show strong seasonal components in all series and the decrease in mortality over the period. 
+
+
+
+```{r}
+panel.cor <- function(x, y, ...){
+usr <- par("usr"); on.exit(par(usr))
+par(usr = c(0, 1, 0, 1))
+r <- round(cor(x, y), 2)
+text(0.5, 0.5, r, cex = 1.75)   
+}
+pairs(cbind(Mortality=cmort, Temperature=tempr, Particulates=part), col="dodgerblue3", lower.panel=panel.cor)
+```
+
+There is inverse relationship between mortality and temperature and positive relationship between mortality and pollution. Temperature and pollution are nearly uncorrelated. Based on this scatter plot both Temperature $(T_t)$ and particulate matter $(P_t)$ should be in the model to explain mortality $(M_t)$. For illustration we consider 4 models
+
+1. $M_t= \beta_0+\beta_1 t + e_t$
+2. $M_t= \beta_0+\beta_1 t + \beta_2 (T_t-T_.) + e_t$
+3. $M_t= \beta_0+\beta_1 t + \beta_2 (T_t-T_.)+ \beta_3 (T_t-T_.)^2 + e_t$
+4. $M_t= \beta_0+\beta_1 t + \beta_2 (T_t-T_.)+ \beta_3 (T_t-T_.)^2 + \beta_4 P_t +e_t$
+
+We adjust temperature for its mean $T_.=74.26$ to avoide collinearity between $T_t$ and $T_t^2.$ Since
+
+```{r}
+par(mfrow = 2:1)
+plot(tempr, tempr^2) # collinear
+cor(tempr, tempr^2)
+temp = tempr - mean(tempr)
+plot(temp, temp^2) # not collinear
+cor(temp, temp^2)
+```
+
+To compare the models the best measures are 
+
++ $AIC= \log \hat{\sigma}^2_k + \frac{n+2k}{n}$ 
+
++ $AICc = \log \hat{\sigma}^2_k + \frac{n+k}{n-k-2}$ 
+
++ $BIC = \log \hat{\sigma}^2_k + \frac{k \log n}{n}$  
+
+which measure accuracy vs parsinomy. For model 3:
+
+```{r}
+temp = tempr - mean(tempr) # center temperature
+temp2 = temp^2
+trend = time(cmort) # time
+fit = lm(cmort~ trend + temp + temp2 + part, na.action=NULL)
+summary(fit) # regression results
+summary(aov(fit)) # ANOVA table (compare to next line)
+summary(aov(lm(cmort~cbind(trend, temp, temp2, part)))) # Table 3.1
+num = length(cmort) # sample size
+AIC(fit)/num - log(2*pi) # AIC
+BIC(fit)/num - log(2*pi) # BIC
+```
+
+If you run for the other models you obtain the results in the following table
+
+|Model|k|SSE|$R^2$|AIC|BIC|
+|-----:|-:|---:|-----:|---:|---:|
+|1.|2|40020|.21|5.38|5.40|
+|2.|3|31413|.38|5.14|5.17|
+|3.|4|27985|.45|5.03|5.07|
+|4.|5|20508|.60|4.72|4.77|
+
+The plots show evidence of lagged dependence but that is left for the future.
+
+
+
+

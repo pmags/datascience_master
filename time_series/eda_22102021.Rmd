@@ -1,0 +1,39 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#libraries
+library(xts)
+library(tidyverse)
+
+```
+```{r}
+# importt data
+csv_data = as_tibble(read.csv("time_series/Transaction_2018-20219_13-10-2021.csv", sep = ";")) %>% 
+  mutate(
+    date = as.Date(Open_Date),
+    Expect_Price = as.numeric(Expect_Price)
+    ) %>% 
+  group_by(date) %>% 
+  summarise(value = sum(Expect_Price)) %>% 
+  as.data.frame()
+
+# convert to timeseries
+
+ts_data = xts(csv_data[,-1],order.by = csv_data[,1])
+
+```
+
+```{r}
+plot.xts(ts_data)
+```
+
+```{r}
+ts_data_log <- ts_data %>% mutate(log = log(value))
+
+
+```
+
+

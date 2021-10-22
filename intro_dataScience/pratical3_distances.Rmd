@@ -1,0 +1,77 @@
+---
+title: "Pratical #3: Distances"
+date: 22-10-2021
+output: html_notebook
+---
+
+
+```{r setup, include = FALSE}
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "master_env", conda = "C:\\Anaconda3\\envs\\master_env", required= TRUE)
+py_config()
+
+```
+
+```{r}
+
+# Bring iris dataset into the essay
+
+library(datasets)
+data(iris)
+summary(iris)
+
+```
+
+
+### Explain why computing the proximity between two attributes is often simpler than computing the similarity between two objects.
+
+
+### The Euclidean distance works well when we are working in a continuous space and we can move in a "straight line" from one point to the other. This is the case of flying between two airports if we ignore traffic restrictions and the roundness of the earth. When is Manhattan distance preferable? Think of two examples and justify.
+
+
+### Two tourist buses, with 40 passengers each, stop in a road restaurant at the same time. Each on leaves when the last tourist arrives to the bus. How can we describe each bus stop as a vector of numbers and what is the best distance measure for determining the difference of time spent for two buses in one stop?
+
+
+### **Given two numerical arrays (for example two examples of iris flowers), apply Euclidean, Mahalanobis and Minkowski distances and discuss about the results. When is it more convenient to apply each one? (Notice that Mahalanobis was not given in class. Explore a bit more and discuss about advantages and disadvantages of using Mahalanobis).**
+
+```{r}
+
+set.seed = 123
+
+# choosing 2 observations from iris dataste
+
+ev1 <- iris[round( runif(1, min =  1, max = dim(iris)[1]) ) , 1:4]
+ev2 <- iris[round( runif(1, min =  1, max = dim(iris)[1]) ) , 1:4]
+diff <- ev1 - ev2
+
+# Calculating eucledian 
+
+eucledian <- sqrt( sum((diff)^2) ) 
+
+# calculate Minkowsky
+
+p <- 5
+minkowsky <- sum((abs(diff)^p))^(1/p)
+
+
+# calculate Mahalanobis
+ 
+
+```
+
+
+
+
+### Explain the difference between the distance calculated using 'simple matching' and the 'Jaccard' distance. In what situation, we apply one or the other?
+
+### Suppose you need to compare two gene sequences represented by strings of 0's and 1's where 1 shows the presence of a given gene and 0 shows the absence of that gene. What would be the most suitable distance metrics to use in this case?
+
+### Two texts are described by vectors where each position corresponds to the frequency of one of the words. For example D1="Mary likes cats", D2="John likes dogs and dogs", Terms=<Mary,John,likes,and,cats,dogs>, V1=<1,0,1,0,1,0>, V2=<0,1,1,1,0,2>. How can we measure the similarity between two texts?
+
+
+### Table 1 shows counters for different species of plants in different sites (s1...s30). Calculate the distances among the pairs of sites ((s1,s2), (s1,s3) etc) using the distance metrics:
+
+
+
+

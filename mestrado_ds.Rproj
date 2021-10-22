@@ -11,3 +11,7 @@ Encoding: UTF-8
 
 RnwWeave: knitr
 LaTeX: XeLaTeX
+
+PythonType: conda
+PythonVersion: 3.7.10
+PythonPath: C:/Anaconda3/envs/venv_mestrado/python.exe

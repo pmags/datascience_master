@@ -1,0 +1,46 @@
+---
+title: "Pratical_statistics_21102021"
+author: "Pedro Magalhães"
+date: "22/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "C:/repos/mestrado_ds")
+
+library(reticulate)
+reticulate::use_condaenv("venv_mestrado", required= TRUE)
+py_config()
+
+```
+
+
+```{r}
+data <- read.csv("estatistica_pratica/kmf.txt",sep = "")
+
+sd(data$weight)
+
+hist(data$weight)
+
+boxplot(data$weight)
+
+prop.table(table(data$sex))
+
+barplot(table(data$sex))
+
+hist(data$weight[data$sex == "girl"])
+
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(data, aes(x = weight)) + 
+  geom_histogram(binwidth = 0.5, boundary=0) +
+  theme_classic()
+
+```
+
+
+
