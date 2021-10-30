@@ -8,7 +8,7 @@ output: html_notebook
 ```{r setup, include = FALSE}
 
 library(reticulate)
-reticulate::use_condaenv(condaenv = "master_env", conda = "C:\\Anaconda3\\envs\\master_env", required= TRUE)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
 py_config()
 
 ```

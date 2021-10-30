@@ -1,0 +1,131 @@
+---
+title: "2# Essay 23/10/2021"
+author: "Pedro Magalhães"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+
+```
+
+
+## Question: 
+#### **Given two numerical arrays (for example two examples of iris flowers), apply Euclidean, Mahalanobis and Minkowski distances and discuss about the results. When is it more convenient to apply each one? (Notice that Mahalanobis was not given in class. Explore a bit more and discuss about advantages and disadvantages of using Mahalanobis).**
+
+
+```{r}
+
+# Bring iris dataset into the essay
+
+library(datasets)
+data(iris)
+
+# randomly choose 2 observations from the data to use for distance examples:
+set.seed = 123
+
+# choosing 2 observations from iris dataste
+
+ev1 <- iris[round( runif(1, min =  1, max = dim(iris)[1]) ) , 1:4]
+ev2 <- iris[round( runif(1, min =  1, max = dim(iris)[1]) ) , 1:4]
+diff <- ev1 - ev2
+
+
+```
+
+
+
+**Eucledian distance**
+
+Is most widely used distance measure and the one closest to our every day definition of "distance". Given that the smallest distance between 2 points,defined on $\mathbb{R}^n$ space, is given by the lenght of a straight line between both, is can be easily deducted using Pythagoras Theorem that eucledian distance $(D_{eucledian})$ between point $A = (x_a, y_a)$ and point $B = (x_b,y_b)$ equals:
+
+
+$$
+  D_{eucledian}(A,B) = \sqrt{(x_a-x_b)^2)   + (y_a-y_b)^2)}
+$$
+Therefore, given 2 random points taken from Iris dataset, each a vector of 4 elements, than the eucledian distance in $\mathbb{R}^4$ between the 2 can be calculated using the following code:
+
+
+```{r}
+
+# Calculating Eucledian 
+
+eucledian <- sqrt( sum((diff)^2) ) 
+
+paste("Eucledian distance between event1 (ev1) and event2 (ev2) equals",round(eucledian,3))
+
+```
+
+**Minkowsky distance**
+
+Minkowsky distance if often described as a generalization of both eucledian and manhattan distance as it allows for the calculation of both providing a $p$. It is defined as such:
+
+$$
+  D_{minkowsky}(A,B) = (\sum_{i=1}^n {x_i - y_i}^p)^{\frac{1}{p}}
+$$
+When $p = 2$ the distance will equal eucledian distance and when $p = 1$ it returns the manhattan distance. Using the above example of 2 random observations from iris dataset we calculate the minkowsky distance for p=5 and the manhattan distance. 
+
+```{r}
+
+# calculate Minkowsky
+
+p <- 5
+minkowsky <- sum((abs(diff)^p))^(1/p)
+
+# calculate Manhattan using Minkowsky
+p <- 1
+manhattan <- sum((abs(diff)^p))^(1/p)
+
+paste("Manhattan distance between event1 (ev1) and event2 (ev2) equals",round(manhattan,3))
+
+```
+
+**Mahalanobis distance**
+
+To this point we have defined distances between 2 point but never took into consideration the distribution of the obervation. The Mahalanobis calculates the distance between a point/vector and the the distribution.
+
+While eucledian distance requires points to be independent and equaly weighted, mahalanobis distance corrects this effects by standardize/normalize the distance by taking into consideration the covariance between points in te dataset($S$).
+
+Considering a vetor observation of $v_{x,y}^T \subset F$ and $\mu_F = (\mu_1, \mu_1,...,\mu_n)^T $ then the distance is calculated as such: 
+
+
+$$
+  D_{mahalanobis}A = \sqrt{(v_{x,y} - \mu_F)^T S^{-1}(v_{x,y} - \mu_F)} 
+$$
+
+In the case of single point where T = 1 then :
+
+$$
+  D_{mahalanobis}A = \sqrt{\frac{(v_{x,y} - \mu_F)^2}{S} } 
+$$
+
+Following the above example and calculate the point distance for ev1:
+
+```{r}
+
+# using mahalanobis with stats package
+
+mahalanobis <- sqrt(mahalanobis(ev1, colMeans(iris[,1:4]), cov(iris[,1:4])))
+
+paste("mahalanobis distance between event1 (ev1) the distribution",round(mahalanobis,3))
+
+``` 
+
+
+##### When to use any of the above distances
+
+- Eucledian distance is simple to understand and therefore widely used. Although it doesn't take in consideration the "context" of each point in the distribution it is used on classification problems by coumputing differences to a group center/centroid. Nonetheless it is very computational intensive and can return poor performances when many features are used, and is sensitive to correlation among observations which can severely impact conclusions,
+
+- Minkowsky provide sa generalized method for calculating distances and is normally used with P = {1,2}. The Manhattan distance, although a simplification when compared to eucledian is less resource intensive and therefore preferable on project including a large number of features,
+
+- Mahalanobis by normalizing the distance is unbiased to correlation among observations making it interesting to use in the case of severe inbalance and non independent observations.
+
+
+

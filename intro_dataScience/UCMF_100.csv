@@ -1,0 +1,100 @@
+ID,Peso,Altura,IMC,Atendimento,DN,IDADE,Convenio,PULSOS,PA SISTOLICA,PA DIASTOLICA,PPA,NORMAL X ANORMAL,B2,SOPRO,FC,HDA 1,HDA2,SEXO,MOTIVO1,MOTIVO2
+1,5,51,19,11/05/06,30/03/06,0.12,GS,Normais,,,Não Calculado,Anormal,Normal,Sistólico,112,Palpitacao,,M,6 - Suspeita de cardiopatia,6 - Palpitação/taquicardia/arritmia
+2,3.5,50,14,25/05/05,19/05/05,0.02,GS,Normais,,,Não Calculado,Anormal,Normal,ausente,128,Dispneia,,M,6 - Suspeita de cardiopatia,6 - Dispnéia
+3,0,0,,12/06/01,08/05/05,-4.05,SULA,Normais,,,Não Calculado,Anormal,Normal,Sistólico,88,Assintomático,,M,2 - Check-up,
+4,8.1,65,19,15/10/09,21/04/09,0.5,,Normais,,,Não Calculado,Anormal,Normal,ausente,92,Assintomático,,M,5 - Parecer cardiológico,
+5,39.5,142,20,23/01/09,24/10/99,9.6,Sulam,Normais,85,50,Normal,Anormal,Normal,ausente,90,,,M,5 - Parecer cardiológico,5 - Atividade física
+6,26,112,21,22/08/03,26/05/99,4.4,GS,Normais,100,60,Normal,Anormal,Desdob fixo,ausente,100,Assintomático,,M,2 - Check-up,
+7,40,151,18,14/01/08,14/08/95,12.89,SAME,Normais,,,Não Calculado,Anormal,Normal,ausente,96,Dor precordial,,M,5 - Parecer cardiológico,
+8,28,117,20,01/09/05,28/12/99,5.89,GS,Normais,110,65,Pre-Hipertensão PAS,Anormal,Normal,ausente,80,Assintomático,,F,5 - Parecer cardiológico,5 - Cirurgia
+9,8,61,21,19/06/06,20/03/06,0.26,GS,Normais,,,Não Calculado,Anormal,Normal,ausente,120,Assintomático,,M,5 - Parecer cardiológico,
+10,5.1,57,16,06/09/07,20/06/07,0.22,,Normais,,,Não Calculado,Anormal,Normal,sistólico,110,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+11,24.5,122,16,03/12/07,29/11/01,6.24,UR,Normais,100,65,Normal,Anormal,Normal,sistólico,88,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+12,18,98,19,20/06/03,18/06/00,3.12,Grupo,Normais,,,Não Calculado,Anormal,Outro,Sistólico,100,Assintomático,,M,1 - Cardiopatia já estabelecida,1 - Cardiopatia adquirida
+13,42,0,,02/04/09,24/04/94,15.5,UR,Normais,100,60,Não Calculado,Normal,Normal,ausente,52,Assintomático,,M,2 - Check-up,
+14,3.9,53,14,20/05/04,10/05/04,0.03,PART,Normais,,,Não Calculado,Anormal,Hiperfonética,Sistólico,112,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+15,16,98,17,16/04/07,10/04/04,3.13,SB,Normais,,,Não Calculado,Normal,Normal,ausente,88,,,M,5 - Parecer cardiológico,5 - Cirurgia
+16,0,0,,29/03/05,31/07/00,4.84,GS,Normais,90,60,Não Calculado,Normal,Normal,ausente,80,,,M,1 - Cardiopatia já estabelecida,1 - Cardiopatia congenica
+17,10.5,89,13,29/07/03,12/12/00,2.72,SA,Normais,90,60,Normal,Normal,Normal,ausente,95,Assintomático,,F,5 - Parecer cardiológico,5 - Cirurgia
+18,47,145,22,08/10/04,01/01/94,11.17,S.America,Normais,110,60,Normal,Anormal,Normal,Sistólico,80,Desmaio/tontura,,F,6 - Suspeita de cardiopatia,6 - Palpitação/taquicardia/arritmia
+19,10.4,88,13,16/05/08,10/11/05,2.61,GS,Normais,,,Não Calculado,Anormal,Normal,ausente,120,Assintomático,,F,5 - Parecer cardiológico,5 - Cirurgia
+20,52,155,22,26/10/07,10/03/91,17.26,UG,Normais,140,90,HAS-2 PAS,Anormal,Normal,ausente,70,Dor precordial,Dispneia,F,5 - Parecer cardiológico,
+21,1,0,,22/11/06,01/02/99,8.1,GS,Normais,100,50,Não Calculado,Normal,Outro,ausente,70,,,M,6 - Suspeita de cardiopatia,6 - Dor precordial
+22,45,0,,21/08/09,10/05/94,15.86,,Normais,105,70,Não Calculado,Normal,Normal,ausente,78,Desmaio/tontura,Palpitacao,M,5 - Parecer cardiológico,
+23,16,98,17,18/07/08,09/08/05,3.05,,Normais,,,Não Calculado,Normal,Normal,ausente,78,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+24,28,133,16,27/08/03,14/07/95,8.43,Norclinicas,Normais,140,100,HAS-2 PAS,Anormal,Normal,sistólico,100,Outro,,M,6 - Suspeita de cardiopatia,6 - HAS/dislipidemia/obesidade
+25,18,110,15,29/10/07,11/10/01,6.28,UR,Normais,95,60,Normal,Normal,Normal,ausente,84,Palpitacao,,M,6 - Suspeita de cardiopatia,
+26,0,0,,21/02/05,20/01/98,7.36,GS,Normais,105,55,Não Calculado,Anormal,Normal,sistólico,85,Assintomático,,M,5 - Parecer cardiológico,5 - Atividade física
+27,53,143,26,31/08/06,29/01/97,9.95,Camed,Normais,120,80,Pre-Hipertensão PAS,Normal,Normal,ausente,90,,,M,6 - Suspeita de cardiopatia,6 - HAS/dislipidemia/obesidade
+28,14,94,16,13/12/07,05/08/04,3.48,,Normais,90,50,Normal,Anormal,Normal,ausente,120,Assintomático,,M,5 - Parecer cardiológico,
+29,34,0,,25/02/08,27/12/01,6.39,REAL S.,Normais,100,60,Não Calculado,Normal,Normal,ausente,78,Assintomático,,M,5 - Parecer cardiológico,
+30,13,104,12,10/07/09,26/01/05,4.62,,Normais,90,50,Normal,Normal,Normal,ausente,78,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+31,20,109,17,27/04/09,01/04/04,5.26,SB,Normais,100,70,Pre-Hipertensão PAD,Normal,Normal,Sistólico,88,,,M,6 - Suspeita de cardiopatia,6 - Sopro
+32,17.1,0,,28/03/07,24/02/03,4.24,Medial,Normais,100,60,Não Calculado,Normal,Normal,ausente,100,,,M,,
+33,9.2,74,17,09/11/04,19/02/04,0.75,SEMEPE,Normais,,,Não Calculado,Anormal,Normal,sistólico,132,Assintomático,,M,1 - Cardiopatia já estabelecida,1 - Cardiopatia congenica
+34,52,167,19,29/07/05,28/07/90,15.57,MEDIAL,Normais,110,70,Normal,Anormal,Normal,Sistólico,76,Dor precordial,,M,5 - Parecer cardiológico,5 - Cirurgia
+35,3.3,50,13,27/03/09,01/02/09,0.15,,Normais,,,Não Calculado,Anormal,Normal,Sistólico,102,Assintomático,,F,6 - Suspeita de cardiopatia,6 - Sopro
+36,14,93,16,27/01/04,09/01/01,3.16,SB,Normais,,,Não Calculado,Normal,Normal,ausente,72,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+37,19,105,17,28/07/08,02/03/04,4.57,,Normais,,,Não Calculado,Normal,Normal,ausente,78,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+38,14,120,10,20/12/04,29/11/00,4.21,CT,Normais,,,Não Calculado,Anormal,Normal,Sistólico,96,Cianose,Dispneia,M,6 - Suspeita de cardiopatia,6 - Cianose
+39,22,114,17,17/05/07,18/04/03,4.23,UG,Normais,,,Não Calculado,Normal,Normal,ausente,,,,M,6 - Suspeita de cardiopatia,6 - Dor precordial
+40,36.3,132,21,15/09/09,18/04/03,6.65,UG,Normais,100,70,Normal,Normal,Normal,ausente,,,,M,5 - Parecer cardiológico,
+41,34.5,143,17,18/05/07,22/07/95,12.27,GRUPO,Normais,90,50,Normal,Normal,Normal,ausente,76,Assintomático,,M,5 - Parecer cardiológico,
+42,21,117,15,16/03/05,19/05/98,7.08,GS,Normais,90,60,Normal,Anormal,Normal,Sistólico,100,Assintomático,,F,5 - Parecer cardiológico,5 - Atividade física
+43,4.7,53,17,19/03/10,21/11/09,0.34,,Normais,,,Não Calculado,Normal,Normal,ausente,120,Dispneia,,M,2 - Check-up,
+44,18,101,18,03/09/04,16/02/01,3.68,SB,Normais,95,55,Normal,Normal,Normal,ausente,92,Assintomático,,F,5 - Parecer cardiológico,5 - Cirurgia
+45,42,159,17,12/06/07,29/09/94,13.18,GS,Normais,100,70,Normal,Normal,Normal,ausente,80,,,M,5 - Parecer cardiológico,5 - Atividade física
+46,34,0,,05/08/09,30/04/01,8.58,,Normais,100,60,Não Calculado,Anormal,Normal,Sistólico,80,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+47,10.7,71,21,13/03/06,17/02/05,1.11,CC,Normais,,,Não Calculado,Anormal,Normal,Sistólico,100,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+48,26,112,21,10/04/08,13/07/04,3.88,,Normais,120,70,HAS-2 PAS,Anormal,Normal,Sistólico,80,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+49,0,0,,05/03/09,28/11/07,1.32,,Normais,,,Não Calculado,Anormal,Normal,Sistólico,120,Cianose,Dispneia,M,6 - Suspeita de cardiopatia,6 - Sopro
+50,83,177,26,02/06/09,05/01/89,21.17,,Normais,110,70,,Normal,Normal,ausente,74,Assintomático,,M,5 - Parecer cardiológico,
+51,36,154,15,09/04/03,29/03/91,12.48,UR,Normais,115,60,Normal,Anormal,Outro,ausente,100,Dispneia,,F,6 - Suspeita de cardiopatia,6 - Palpitação/taquicardia/arritmia
+52,42,156,17,15/10/03,29/03/91,13.02,UR,Normais,110,60,Normal,Anormal,Normal,ausente,84,Palpitacao,Dispneia,F,6 - Suspeita de cardiopatia,6 - Palpitação/taquicardia/arritmia
+53,9.5,73,18,03/07/08,20/09/07,0.82,,Normais,,,Não Calculado,Anormal,Desdob fixo,Sistólico,140,Assintomático,,M,1 - Cardiopatia já estabelecida,1 - Cardiopatia congenica
+54,42.9,145,20,03/10/03,14/07/94,9.57,GS,Normais,110,70,Normal,Normal,Normal,ausente,68,Assintomático,,F,2 - Check-up,
+55,18.3,100,18,27/07/04,04/08/00,4.13,UR,Normais,80,45,Normal,Normal,Normal,ausente,100,Assintomático,,M,6 - Suspeita de cardiopatia,Outro
+56,48,167,17,10/07/09,07/08/96,13.41,SA,Normais,,,Não Calculado,Normal,Normal,ausente,70,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+57,6.3,55,21,05/04/10,01/02/10,0.18,,Normais,,,Não Calculado,Anormal,Normal,Sistólico,108,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+58,,135,,16/03/05,20/06/96,9.07,UR,Normais,110,60,Normal,Anormal,Normal,sistólico,96,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+59,5,53,18,15/09/09,06/08/09,0.11,GRUPO,Normais,,,Não Calculado,Normal,Normal,ausente,136,Dispneia,,M,5 - Parecer cardiológico,
+60,21,107,18,19/09/03,26/11/99,3.96,UR,Normais,90,50,Normal,Normal,Normal,ausente,88,Assintomático,,F,5 - Parecer cardiológico,5 - Cirurgia
+61,42,130,25,27/05/09,13/09/98,11.11,,Normais,100,50,Normal,Normal,Normal,ausente,96,Assintomático,,F,5 - Parecer cardiológico,
+62,49.8,155,21,25/03/10,09/09/97,13.01,UR,Normais,100,80,Pre-Hipertensão PAD,Normal,Normal,ausente,86,Dispneia,Desmaio/tontura,F,5 - Parecer cardiológico,
+63,49,154,21,18/06/03,09/10/85,18.36,S.A,Normais,110,60,,Anormal,Normal,Sistólico,60,Assintomático,,F,1 - Cardiopatia já estabelecida,1 - Cardiopatia congenica
+64,3.5,0,,21/01/08,20/01/08,0,Norclínicas,Normais,,,Não Calculado,Anormal,Normal,Sistólico,120,,,F,6 - Suspeita de cardiopatia,6 - Sopro
+65,0,0,,,,,,,,,#VALUE!,,,,,,,Indeterminado,,
+66,40,143,20,07/01/09,22/05/98,11.03,Sul America,Normais,100,65,Normal,Normal,Normal,ausente,88,Desmaio/tontura,,F,5 - Parecer cardiológico,5 - Atividade física
+67,0,0,,31/10/07,06/08/97,10.62,GRUPO,Normais,100,50,Não Calculado,Normal,Normal,ausente,80,Assintomático,,F,2 - Check-up,
+68,17,106,15,07/03/08,19/08/02,5.76,UR,Normais,90,60,Normal,Anormal,Normal,ausente,88,Assintomático,,F,2 - Check-up,
+69,18,0,,17/05/04,12/09/99,4.86,SAME,Normais,90,50,Não Calculado,Anormal,Normal,Sistólico,82,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+70,7.2,64,18,21/11/03,03/08/03,0.31,UR,Normais,,,Não Calculado,Normal,Normal,ausente,120,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+71,33.5,143,16,07/11/05,26/12/94,11.28,SB,Normais,100,60,Normal,Anormal,Normal,Sistólico,70,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+72,65.6,174,22,40050,36117,11.17,UR,Normais,100,70,Normal,Normal,Normal,ausente,72,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+73,14,99,14,23/07/04,25/05/01,3.28,SEMEPE,Normais,,,Não Calculado,Anormal,Normal,ausente,82,Assintomático,,M,5 - Parecer cardiológico,6 - Dispnéia
+74,0,0,,28/10/04,13/06/00,4.54,GS,Normais,90,60,Não Calculado,Anormal,Normal,Sistólico,72,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+75,27,136,15,01/04/09,13/06/00,9.13,UR,Normais,100,60,Normal,Normal,Normal,Sistólico,72,,,M,5 - Parecer cardiológico,5 - Atividade física
+76,9.7,0,,09/03/03,09/03/03,0,SUS,Normais,,,Não Calculado,Anormal,Normal,Sistólico,90,,,M,5 - Parecer cardiológico,5 - Cirurgia
+77,13,78,21,08/01/08,13/03/07,0.86,UR,Normais,,,Não Calculado,Anormal,Normal,Sistólico,120,Assintomático,,M,5 - Parecer cardiológico,
+78,21,0,,29/06/06,08/03/97,9.66,UR,Normais,,,Não Calculado,Normal,Normal,ausente,92,Cianose,,M,2 - Check-up,
+79,,116,,38574,35975,7.38,UR,Normais,100,60,Normal,Normal,Normal,ausente,88,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Dor precordial
+80,32,0,,06/08/03,20/10/93,10.16,GS,,100,60,Não Calculado,Anormal,Normal,Sistólico,,Outro,,M,6 - Suspeita de cardiopatia,6 - Alterações de pulso/perfusão
+81,19.3,116,14,11/05/06,08/06/01,5.11,Funcef,Normais,90,45,Normal,Normal,Normal,ausente,100,Assintomático,,M,5 - Parecer cardiológico,5 - Atividade física
+82,0,0,,10/01/08,19/04/06,1.79,Norclínicas,,,,Não Calculado,,,,,,,F,6 - Suspeita de cardiopatia,6 - Sopro
+83,31,133,18,22/03/10,14/02/02,8.4,,Normais,100,70,Normal,Normal,Normal,sistólico,72,Assintomático,,M,6 - Suspeita de cardiopatia,6 - Sopro
+84,22.5,118,16,24/02/05,18/05/99,5.99,GS,Normais,90,50,Normal,Anormal,Normal,sistólico,100,Assintomático,,M,5 - Parecer cardiológico,5 - Cirurgia
+85,19.3,115,15,17/02/06,02/02/00,6.27,SulAmerica,Normais,120,80,HAS-2 PAS,Anormal,Normal,sistólico,80,Assintomático,,F,6 - Suspeita de cardiopatia,6 - HAS/dislipidemia/obesidade
+86,0,0,,,,,,,,,#VALUE!,,,,,,,Indeterminado,,
+87,39.6,0,,02/02/07,18/04/98,9.13,Ideal,,,,Não Calculado,,,,,,,F,6 - Suspeita de cardiopatia,6 - HAS/dislipidemia/obesidade
+88,36.5,140,19,27/04/06,14/03/97,9.46,Ideal,Normais,,,Não Calculado,Normal,Normal,ausente,90,Dor precordial,Dispneia,M,6 - Suspeita de cardiopatia,6 - Dispnéia
+89,0,0,,07/05/09,30/11/98,10.83,IDEAL,Normais,100,60,Não Calculado,Normal,Normal,ausente,110,Desmaio/tontura,,F,5 - Parecer cardiológico,
+90,24.6,124,16,30/05/07,03/12/98,8.81,Medial,Normais,90,50,Normal,Anormal,Normal,sistólico,92,Dor precordial,Desmaio/tontura,F,6 - Suspeita de cardiopatia,6 - Dor precordial
+91,33.5,127,21,19/07/05,30/08/96,9.22,UR,Normais,95,60,Normal,Normal,Normal,ausente,75,,,F,5 - Parecer cardiológico,5 - Cirurgia
+92,70,162,27,13/05/08,30/09/96,12.05,MEDIAL,Normais,120,80,Normal,Anormal,Normal,sistólico,,Dispneia,Ganho de peso,F,6 - Suspeita de cardiopatia,6 - Sopro
+93,7.1,67,16,38185,38035,0.43,GS,,,,Não Calculado,Anormal,Normal,sistólico,100,,,F,6 - Suspeita de cardiopatia,6 - Sopro
+94,3.2,0,,14/04/10,12/04/10,0.01,Sta Helena,Normais,,,Não Calculado,Anormal,Normal,sistólico,120,,,Indeterminado,6 - Suspeita de cardiopatia,6 - Sopro
+95,24.1,122,16,05/09/07,24/06/99,8.51,Fusex,,,,Não Calculado,,,,,,,F,,
+96,23,120,16,21/07/09,02/09/03,6.11,UR,Normais,100,60,Normal,Anormal,Normal,ausente,110,Assintomático,,F,5 - Parecer cardiológico,
+97,18,105,16,17/02/03,36129,4.38,GS,Normais,90,60,Normal,Normal,Normal,ausente,100,Assintomático,,F,6 - Suspeita de cardiopatia,Outro
+98,42,143,21,15/04/10,22/03/00,10.44,UR,Normais,100,60,Normal,Normal,Normal,ausente,64,Assintomático,,F,5 - Parecer cardiológico,
+99,0,0,,17/12/07,29/10/03,4.29,Norclínicas,Normais,90,60,Não Calculado,Normal,Normal,sistólico,72,,,F,6 - Suspeita de cardiopatia,6 - Sopro

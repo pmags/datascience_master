@@ -41,6 +41,12 @@ ggplot(data, aes(x = weight)) +
   theme_classic()
 
 ```
+```{r}
+kfm_girl <- data[data$sex == "girl",]
+
+kfm_girl <- data  %>% filter(sex == "girl")
+
+```
 
 
 

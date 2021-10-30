@@ -1,0 +1,15 @@
+---
+title: "2# Essay 23/10/2021"
+author: Pedro Magalhães
+output: html_notebook
+---
+
+
+```{r setup, include = FALSE}
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+py_config()
+
+```
+

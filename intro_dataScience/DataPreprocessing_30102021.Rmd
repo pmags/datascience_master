@@ -1,0 +1,282 @@
+---
+title: "Data preprocessing Exercises"
+subtitle: "Homework submission"
+date: "30/10/2021"
+author: "Pedro Magalhães"
+output: html_notebook
+---
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+
+```
+
+---
+
+#### **Exercise 1:** 
+
+<span style = "color: blue;">
+A fashion company bought two major shops in town and needs to merge product data for feeding a customer intelligence application. 
+In one of the shops the database contains the attributes
+`<prod_id, prod_category, launch_date, items_sold, price_per_item>` 
+The other shop has a database with
+`<product_id, category_of_product, country_of_origin, value_sold>` 
+Identify at least 5 potential problems and respective solutions when merging the data bases.
+</span>
+
+
+**Answer:**
+
+In order to have an aggregated view over operation on both shops we need to *union/append* both tables/databases to produce a table which can later be used for business analytics.
+Based on the the information available the following considerations should be taken prior to appending both data:
+
+1. **The nature of information between should be consistent and report the same event.** Based on the information given one can assume that both list sales per product for a given time period. but while one reports on quantities sold and price per item the other only contains information on sales value. In order to append both tables the reported value should be the same, in our scenario the sales values should be calculated for both tables and if not available for both shops the sales quantity and price should be removed,
+
+2. **In order to append two tables similar tables should have similar naming.** In our example the following tables should be renamed: "prod_id, prod_category",
+
+3. **Data 'Grain' should be the same**. Although both list report on product id, if each product can have more than one country of origin, then they don't share a similar aggregation and the resulting table will provide inconsistent analysis. With the information given, it seems that the most adequate aggregation would be group both lists by product id,
+
+4. **Guarantee both lists columns have the same data types including currency alignment.** 
+
+5. **Guarantee both lists reflect the same time period**
+
+Although not mandatory, adding a new column containing list origin might be very helpful, especially given the scenario where product id might be similar but is helpful to analyse performance by shop (eg: both stores use manufacturer reference as product id and sell similar products)
+
+
+---
+
+#### **Exercise 2:**
+
+<span style = "color: blue;">
+<p>A company is developing an application for tracking customers inside a shopping mall from the Bluetooth signals of their mobile phones. The data frame below simulates a set of records for customer 'c101' in a succession of time stamps. For each moment,
+the device identifies the floor of the mall where 'c101' is. But when 'c101' changes floor by using the staircase, the records flounder.</p>
+<p>How can we solve the problem with the 'floor' attribute? Propose a simple algorithmic method for fixing it? What kind of data preprocessing operation is it?</p>
+</span>
+
+```{python}
+
+import pandas as pd
+import numpy as np
+floor=np.array([1,1,1,0,1,0,1,0,0,1,0,0,0,0,0,0,0])
+custid=np.array(['c101']*len(floor))
+timst=np.array([i for i in range(len(floor))])+1
+d=pd.DataFrame({'custid':custid,'timestamp':timst,'floor':floor})
+d
+
+```
+
+**Answer:**
+
+It is a operation of removing noise.
+
+---
+
+### **Exercise 3:**
+
+<span style = "color: blue;">
+Consider the following array `<8,12,4,12,NA,9,7,1,15,NA,12,13,7,NA,23,12,NA,9,8,5,NA,21,13,NA,12,3,11,NA,10,6>`
+Compare different methods of data imputation and their effect on the mean and standard deviation of the array. Consider the methods:
+- replace by a constant value (e.g. -1)
+- replace by the most frequent value
+- replace by the mean
+- replace each NA by a value sampled from the distribution of observed values.
+</span>
+
+**Answer:**
+
+```{r}
+
+calc_metrics <- function(x) {
+  result <- c("Meand" = mean(x, na.rm = TRUE),"Standard Deviation"= sd(x, na.rm = TRUE))
+  return(result)
+}
+
+# Creating a vector with missing values
+array <- c(8,12,4,12,NA,9,7,1,15,NA,12,13,7,NA,23,12,NA,9,8,5,NA,21,13,NA,12,3,11,NA,10,6)
+
+# statistical metrics removing na to return value
+metrics <- calc_metrics(array)
+
+# replacing NA with scalar -1
+array_A <- replace(array, is.na(array), -1)
+metrics_A <- calc_metrics(array_A)
+
+# replacing with most frequent value. Meaning, replacing with mode
+
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+array_B <- replace(array, is.na(array), Mode(na.omit(array)))
+metrics_B <- calc_metrics(array_B)
+
+# replacing with the vector mean
+array_C <- replace(array, is.na(array), mean(array, na.rm = TRUE))
+metrics_C <- calc_metrics(array_C)
+
+# replacing with a random value
+
+set.seed(123)
+array_D <- replace(array, is.na(array), sample(na.omit(array),1))
+metrics_D <- calc_metrics(array_D)
+
+data.frame(metrics, metrics_A, metrics_B, metrics_C, metrics_D)
+
+```
+
+
+---
+
+### **Exercise 4:**
+
+<span style = "color: blue;">
+Consider the array above but without the NAs (replaced by some other value) and normalize the array by using:
+- min-max normalization
+- z-score normalization
+</span>
+
+**Answer:**
+
+```{r}
+# To answer we will replace NA with mean
+
+array_mean <-  array_C
+
+# creating function using base R to showcase how both normalization methods should be calculated
+
+min_max <- function(x) {
+  min_value <- min(x)
+  max_value <- max(x)
+  result <- (x - min_value)/(max_value - min_value)
+  return(result)
+}
+
+z_score <- function(x){
+  mean <- mean(x, na.rm = TRUE)
+  sd <- sd(x, na.rm = TRUE)
+  result <- (x - mean) / sd
+  return(result)
+}
+
+data.frame( "original" = array_mean, "min_max" =  min_max( array_mean ) , "z-score" = z_score(array_mean))
+
+
+```
+
+
+
+---
+
+### **Exercise 5:**
+
+<span style = "color: blue;">
+Now the values $<5,12,23,35>$ have to be added. Normalize them with each of the approaches
+</span>
+
+**Answer:**
+
+```{r}
+# Expand vector
+array_increase <- c(array, 5,12,23,35)
+
+# replace with NA with mean values
+array_increase <- replace(array_increase, is.na(array_increase), mean(array_increase, na.rm = TRUE))
+
+data.frame( "original" = array_increase, "min_max" =  min_max( array_increase ) , "z-score" = z_score( array_increase ))
+
+```
+
+
+---
+
+### **Exercise 6:**
+
+<span style = "color: blue;">
+see the iris data set and randomly delete 15 values from the first column and pretend they are missing data. Consider different imputation approaches to 'guess' the missing values. Calculate the Mean Average Error of each approach by using the hidden values and the imputed values. Try the approaches:
+- Replace by the mean of the column.
+- Replace by the mean of the respective class.
+- Replace by the value of the nearest neighbor.
+</span>
+
+```{r}
+# Bring iris dataset into the essay
+library(datasets)
+library(dplyr)
+library(tidyverse)
+data(iris)
+
+# Randomly replace 15 entries with NA on the firs column
+set.seed(123)
+random_sample <- sample(1:nrow(iris),15)
+
+# Replace Na with mean
+class_mean <- iris %>%                                        
+  group_by(Species) %>%                         
+  summarise_at(vars(Sepal.Length),              
+               list(class_mean=mean), na.rm=TRUE) 
+
+iris %>% 
+  left_join(class_mean, by = "Species") %>% 
+  arrange(Species, Sepal.Length) %>% 
+  mutate(Sepal.Length_withNA = replace(Sepal.Length, random_sample, NA),
+         Sepal.Length_mean = replace_na(Sepal.Length_withNA, mean(Sepal.Length, na.rm = TRUE)),
+         Sepal.Length_windowMean = coalesce(Sepal.Length_withNA, class_mean) ,
+         Sepal.Length_nearest = Sepal.Length_withNA # the nearest neighbor in this case we used a fill as a simplification since we already ordered by class and length (assumption: ordered list)
+         ) %>% 
+  fill(Sepal.Length_nearest) %>% 
+  filter(is.na(Sepal.Length_withNA)) %>% 
+  mutate(
+    diff_mean = Sepal.Length - Sepal.Length_mean ,
+    diff_windowMean = Sepal.Length - Sepal.Length_windowMean ,
+    diff_nearest = Sepal.Length - Sepal.Length_nearest 
+  ) %>% 
+  select(diff_mean, diff_windowMean, diff_nearest) %>% 
+  colMeans()
+
+```
+
+
+**Answer:**
+
+### **Exercise 7:**
+
+<span style = "color: blue;">
+Consider the dataset of cardiac patients that you can download in moodle.Examine this data and decide what steps of preprocessing may be useful (and why). 
+</span>
+
+
+**Answer:**
+
+```{r}
+# import dataset
+cardiac <- read_csv("UCMF_100.csv")
+
+# exploring main statistics
+summary(cardiac)
+
+```
+```{r}
+par(mfrow = c(3,1))
+hist(cardiac$Peso)
+hist(cardiac$Altura)
+hist(cardiac$IMC)
+```
+```{r}
+par(mfrow = c(1,4))
+boxplot(cardiac$Peso)
+boxplot(cardiac$Altura)
+boxplot(cardiac$IMC)
+boxplot(cardiac$IDADE)
+```
+
+
+Preprocess recipes:
+- A total of `sum(is.na(cardiac))` which need to be taken care of. For features like `Peso, Altura, IMC` using the probably the median since the histograms show some skewness. Or perform the next preproces steps and use the mean over transformed data. Other features like `PA SISTOLICA, A DIASTOLICA` might require more context knowledge
+
+- Both box plot and histogram shows that for `Peso, Altura, IMC` the ocurrence of some outliers but of values which are not consistent with reality (altura = 0 or Peso = 0) a well as negative age,
