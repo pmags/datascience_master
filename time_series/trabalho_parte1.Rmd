@@ -1,0 +1,75 @@
+---
+title: "Trabalho - cadeira de Séries Temporais"
+author: "Pedro Miguel Sousa Magalhães"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_notebook:
+    theme: cosmo
+    highlight: tango
+  html_document:
+    df_print: paged
+    theme: cosmo
+    highlight: tango
+subtitle: Parte 1
+---
+
+
+## Question:
+
+Consider the time series
+
+$$ x_t = \beta_0 + \beta_1t + \omega_t$$
+
+Where $\beta_0$ and $\beta_1$ are regression coefficients, and $\omega_t$ is a white noise process with variance $\omega_t^2$
+
+(a) Determine whether $x_t$ is stationary
+(b) Show that the process $y_t = x_t - x_{t-1}$ is stationary
+(c) Show that the mean of the two-sided moving average
+
+$$ \nu_t = \frac{1}{3}(x_{t-1} + x_t + x_{t+1})$$ 
+
+is $\beta_0 + \beta_1t$
+
+## Answer:
+
+**Question a):**
+
+A time series is weak stationarity (henceafter just stationarity) when both conditions are met:
+
+i) The expected value $E(x_t)$ is constant and non dependent on the value of $t$
+ii) The autocovariance between two points of the time series in time $(x_t, x_s)$ depends only on the difference time between then $(t-s)$
+
+Considering the properties of the expected value specially given that the expected value of a constant value (scalar) is the value itselfe and white noise as expected value equal to zero, we can calculate the expected value of the above time series as follows:
+
+$$\mu_{x_t} = E(x_t) = E(\beta_0 + \beta_1t + \omega_t) = E(\beta_0) + E(\beta_1t)+E(\omega_t) = \beta_0 + \beta_1t $$
+From the above expression we can conclude that the expected value is dependent of $t$ and therefore violates one of the condition for stationarity **therefore the answer to (a) is that the time series is not stationary.**
+
+---
+**Question b):**
+
+Following the above definition of stationarity we follow a similar test for $y_t$ (or lag 1). But first we can simplify the $y_t$ into the following:
+
+$$y_t = (\beta_0 + \beta_1t + \omega_t) - (\beta_0 + \beta_1(t-1)+ \omega_{t-1}) = \beta_1(t - t + 1) + \omega_t - \omega_{t-1} = \beta_1 + \omega_t - \omega_{t-1}$$
+
+Calculating the expected value we get:
+
+$$\mu_{y_t} = E(\beta_1 + \omega_t - \omega_{t-1}) = \beta_1$$
+
+Since the result is a constant independent of t we can conclude that the **first condition of stationarity is met**.
+
+As for the second condition considering $h$ as the time difference between two observation of the distribution $y$ and given the results obtained as expected value we can conclude the following
+
+$$\gamma_y(h) = COV(y_{t+h}, y_t) = E[(y_{t+h} - \mu_{y,t+h})(y_t-\mu_{y,t})] = E[(w_{t+h}-w_{t+h-1})(w_t-w_{t-1})]$$
+Given that $E(w) = 0 \implies \gamma_y(h) = 0$ and when $h \ne 0$ then:
+
+$$\gamma_y(h) = E(w_t^2 - w_{t-1} - w_tw_{t-1}+w_t^2) = E[(w_t-w_{t-1})^2] = \sigma_w^2$$
+
+Meanting that it depends on $h$ and hence proves that $y_t$ complies with **both conditions for stationarity.**
+
+---
+---
+**Question c):**
+
+$$E(v_1) = \beta_0 + \beta_1t \implies E(v_1) = E[\frac{1}{3}(x_{t-1} + x_t + x_{t+1})] = \frac{1}{3}E(x_{t-1}) + \frac{1}{3}E(x_t) + \frac{1}{3}E(x_{t+1}) = \\ \frac{1}{3}[\beta_0 + \beta_1(t-1)+\beta_0+\beta_1t+\beta-0+\beta_1(t+1)] = \frac{3}{3}(\beta_0 + \beta_1t) = \beta_0 + \beta_1t$$
+

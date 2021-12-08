@@ -1,0 +1,24 @@
+/* Whole document: */
+body{
+  font-family: Arial;
+  font-size: 10pt;
+}
+/* Headers */
+h1{
+  font-size: 16pt;
+  font-weight: bold;
+}
+
+h2{
+  font-size: 14pt;
+  font-weight: bold;
+}
+
+h3,h4,h5,h6{
+  font-size: 12pt;
+  font-style: bold;
+}
+
+blockquote{
+  font-size: 12pt;
+}

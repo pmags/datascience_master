@@ -1,0 +1,414 @@
+---
+title: "Trabalho - cadeira de Séries Temporais"
+author: "Pedro Miguel Sousa Magalhães"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    css: style.css
+    toc: yes
+    toc_depth: 3
+  html_document:
+    css: style.css
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
+subtitle: Parte 2 - EDA série temporal
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.align = "center")
+
+```
+
+```{r libraries, message=FALSE, warning=FALSE, include=FALSE}
+
+library(tidyverse)
+library(xts)
+library(forecast)
+library(astsa)
+library(cowplot)
+library(fpp2)
+
+```
+
+```{r data import}
+
+data_raw <- read.csv("data/train.csv", header = TRUE)
+data_raw <- data_raw %>% select(interval, total_calls)
+data <- as.xts(x = select(data_raw, -interval), 
+               order.by = strptime(
+                 data_raw$interval,"%Y-%m-%d")
+               )
+days <- endpoints(data, on = "days")
+months <- endpoints(data, on = "month")
+
+daily_calls <- period.apply(data, 
+                           FUN = function(x) apply(x, 2, sum, na.rm = TRUE),
+                           INDEX = days)
+index(daily_calls) <- as.Date(index(daily_calls))
+
+```
+
+---
+
+> **Summary:**
+> 
+> The time series analysed contained a subset of the total number of daily calls received by a customer support call center from 2017-01-01 untill 2018-12-31. From a preliminary exploration we can conclude that the data shows a strong upward trend with a positive shift towards the end of the series. Making use of informal / visual methods we verified that the series is heteroscedastic and contains outliers. Upon cleaning and transforming the series, detrending using first difference and a linear regression (polynomial of 2), the ACF showed signs of a weekly seasonality and eventually monthly suggesting that study using different aggregation ("week", "month") might be needed. 
+
+---
+
+# Dataset description and initial transformations
+
+This report explores data containing daily number of calls received by a multinational customer support center. Data extracted from real world operations and includes observations since `r format(min(index(daily_calls)),"%Y-%m-%d")` until `r format(max(index(daily_calls)),"%Y-%m-%d")`. No further contextual information is know or provided which could impact the analysis of the present time series. No seasonality is inherent to the business and product for which the call center provides support. It is know that the number of countries/regions covered increased during the interval in analysis.
+
+
+```{r dataset plot, fig.height=3, fig.width=8}
+ts_plot <- autoplot(daily_calls) + 
+  theme_bw()+
+  geom_line(colour = "blue")
+  
+
+ts_plot + 
+  labs(
+    title = "Number of daily calls received by a customer support call center",
+    subtitle = "nº of ocurrences",
+    x ="",
+    y = "",
+    caption = "Figure 1: timeseries plot of daily number of calls") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m") 
+
+```
+
+From a quick look at *Figure 1* some elements stand out:
+
+- the data shows a clear upward trend with a positive linear relationship despite a upward shift around May 2018.
+-   the variance increases as time progresses leading to the conclusion that the random variable is **heteroscedastic** (using only visual process). 
+-   the dataset contains a clear outliers specially around April and September 2018. 
+
+## Dealing with outliers
+
+Outliers can affect the outcome of the analysis and impact the detrending process. Given that no information about operation was given which could help identify a outlier or better characterize then, they were removed using statistical methods. For this analysis the `tsoutlier()` and `tsclean()` functions of the `forecast` package was used to identify outliers and replace then using linear interpolation. *Figure 2* shows the impact of this transformation.
+
+
+```{r outliers}
+
+outliers <- tsoutliers(daily_calls)
+daily_calls_clean <- tsclean(daily_calls)
+daily_calls[outliers$index,] 
+
+```
+
+```{r plotting remove outlier}
+
+outlier_plot <- ts_plot + 
+  labs(
+    subtitle = "with outliers",
+    x ="",
+    y = "") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m")
+
+
+
+no_outlier_plot <- autoplot(daily_calls_clean) + 
+  labs(
+    subtitle = "without outliers",
+    x ="",
+    y = "",
+    caption = "Figure 2: effect of removing outliers") +
+  theme_bw() +
+  geom_line(colour = "blue") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m")
+
+cowplot::plot_grid(outlier_plot, no_outlier_plot,
+                   nrow=2, ncol = 1, align = "v")
+
+```
+
+## Dealing with heterostacity
+
+The assumption of homoscedasticity is key in many classical models (linear regression) and impacts the analysis. There is limited information for understanding the causes for the increase variation although, as was pointed out in the beginning, the increase number of regions might help explain this behavior (as number of location increases so does the difference between quiet and busy days).
+
+Since the optimal lambda for BoxCox transformation is close to zero (estimated using Guerrero's method and returning `r BoxCox.lambda(daily_calls, method = "guerrero")`) a simple log transformation was used for simplicity.  *Figure 3* illustrates the impact of this transformation.
+
+```{r heterostacity}
+
+log_dailyCalls <- log(daily_calls_clean)
+
+clean_plot <- autoplot(daily_calls_clean) + 
+  theme_bw()+
+  geom_line(colour = "blue") + 
+  labs(
+    title = "Number of daily calls received by a customer support call center",
+    subtitle = "nº of ocurrences",
+    x ="",
+    y = "") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m") +
+  geom_segment(
+    x = as.Date("2017-01-01"), 
+    y = min(daily_calls_clean$total_calls) + 1000,
+    xend = as.Date("2018-12-01"), 
+    yend = max(daily_calls_clean$total_calls) + 1000, 
+    linetype = "dashed")+
+  geom_segment(
+    x = as.Date("2017-01-01"), 
+    y = min(daily_calls_clean$total_calls) + 1000,
+    xend = as.Date("2018-12-01"), 
+    yend = max(daily_calls_clean$total_calls) - 10000, 
+    linetype = "dashed")
+
+log_plot <- autoplot(log_dailyCalls) + 
+  theme_bw()+
+  geom_line(colour = "blue") + 
+  labs(
+    title = "Log of daily calls received by a customer support call center",
+    subtitle = "nº of ocurrences = e^y",
+    x ="",
+    y = "",
+    caption = "Figure 3: log transform") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".",decimal.mark=",", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m")
+
+
+cowplot::plot_grid(clean_plot, log_plot,
+                   nrow=2, ncol = 1, align = "v")
+
+```
+
+# Trend
+
+As it is easily apparent from the plots above, the series under study presents a regular pattern with increasing variance. On one hand it suggests that a weekly season might exist but in other hand it makes it harder to analyse the underlying longer trend upward. 
+
+```{r 30 days moving average plot}
+
+daily_calls_30d <- rollmean(log_dailyCalls, k = 30, align = "right") 
+daily_calls_ma <- merge(log_dailyCalls,daily_calls_30d)
+
+ggplot(data = daily_calls_ma, aes(x = index(daily_calls_ma), y = total_calls)) + 
+  geom_line(colour = "grey", size = 0.3) +
+  geom_line(aes(x = index(daily_calls_ma), y = total_calls.1), size = 1, colour = "red") +
+  labs(
+    title = "Smoothing using 30 days moving average",
+    subtitle = "calculated considering only historical data",
+    x ="",
+    y = "",
+    caption = "Figure 4: 30 days smoothing") +
+  theme_bw() +
+    theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m")
+
+```
+Using the 30 days moving average ( ~ 30 days before ) the underlying trend becomes more apparent *Figure 4.*. Despite a shift or acceleration around April/May 2018, the trend seems to follow a quadratic function more than a linear relation given the apparent plateau June and October.
+
+## Detrending using first difference
+
+```{r first differences}
+
+daily_calls_lag1 <-  xts::diff.xts(log_dailyCalls, k = 1, lag = 1)
+
+lag_plot <- autoplot(daily_calls_lag1) + 
+  geom_line(colour = "blue") +
+  labs(
+    title = "First differences Log daily calls",
+    x ="",
+    y = "",
+    caption = "Figure 5: first differences") +
+  theme_bw() +
+    theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m")
+  
+```
+
+```{r acf calc}
+
+log_acf <-  acf(log_dailyCalls, plot = FALSE)
+lag1_acf <- acf(daily_calls_lag1, na.action = na.pass, plot = FALSE)
+
+# convert to dataframe
+
+log_acf_df <- with(log_acf, data.frame(lag, acf))
+lag1_acf_df <- with(lag1_acf, data.frame(lag, acf))
+
+```
+
+```{r}
+
+acf_logPlot <- ggplot(log_acf_df, mapping = aes(x = lag, y = acf))+
+  geom_hline(aes(yintercept = 0)) +
+  geom_segment(mapping = aes(xend = lag, yend = 0))+
+  labs(
+    title = "ACF first differences",
+    x ="",
+    y = "",
+    caption = "Figure 6: series ACF") +
+  theme_bw() +
+    theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    )
+
+log_plot <- log_plot + labs(caption = "")
+
+cowplot::plot_grid( log_plot, acf_logPlot,
+                   nrow=2, ncol = 1, align = "v") 
+
+
+```
+
+```{r}
+
+acf_lagPlot <- ggplot(lag1_acf_df, mapping = aes(x = lag, y = acf))+
+  geom_hline(aes(yintercept = 0)) +
+  geom_segment(mapping = aes(xend = lag, yend = 0))+
+  labs(
+    title = "ACF first differences",
+    x ="",
+    y = "",
+    caption = "Figure 7: first differences ACF") +
+  theme_bw() +
+    theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    )
+
+lag_plot <- lag_plot + labs(caption = "")
+
+cowplot::plot_grid( lag_plot, acf_lagPlot,
+                   nrow=2, ncol = 1, align = "v") 
+
+
+```
+From *figures 6 and 7* it is can be concluded that a weekly seasonality exists in this time series with the ACF not showing a rapid convergence over time
+
+## Detrending fitting a model
+
+As stated before, the trend seems to follow a quadratic function, suspicion which can be better stated on *Figure 7*. The conclusion from this method are in line with the first differences.
+
+```{r ploy line}
+
+autoplot(log_dailyCalls) + 
+  theme_bw()+
+  geom_line(colour = "blue") + 
+  labs(
+    title = "Log of daily calls received by a customer support call center",
+    subtitle = "nº of ocurrences = e^y",
+    x ="",
+    y = "",
+    caption = "Figure 8: fitted quadratic function") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".",decimal.mark=",", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m") +
+  geom_smooth( method = lm, formula = y ~ poly(x, 2), show.legend = TRUE, colour = "red")
+
+```
+
+
+```{r fitting model}
+
+model <- lm(coredata(log_dailyCalls) ~ poly(index(daily_calls),2) , na.action = NULL)
+detr <- zoo(resid(model), index(daily_calls))
+acf_fitt <-  acf(detr,plot = FALSE)
+# convert to dataframe
+
+acf_fitt_df <- with(acf_fitt, data.frame(lag, acf))
+
+```
+
+```{r}
+
+fitted_plot <- autoplot(detr) + 
+  geom_line(colour = "blue") +
+  labs(
+    title = "Model residuals",
+    x ="",
+    y = "") +
+  theme_bw() +
+    theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) +
+  scale_x_date(limits = as.Date(c(min(index(daily_calls)), max(index(daily_calls)))), date_breaks = "2 months", date_labels = "%Y-%m")
+
+acf_fitterPlot <- ggplot(acf_fitt_df, mapping = aes(x = lag, y = acf))+
+  geom_hline(aes(yintercept = 0)) +
+  geom_segment(mapping = aes(xend = lag, yend = 0))+
+  labs(
+    title = "ACF first differences",
+    x ="",
+    y = "",
+    caption = "Figure 9: model residuals ACF") +
+  theme_bw() +
+    theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    )
+
+cowplot::plot_grid( fitted_plot, acf_fitterPlot,
+                   nrow=2, ncol = 1, align = "v") 
+
+```
+
+

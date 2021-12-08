@@ -1,0 +1,91 @@
+---
+title: "Teste intercalar - cadeira de Séries Temporais"
+author: "Pedro Miguel Sousa Magalhães"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_notebook:
+    theme: cosmo
+    highlight: tango
+  html_document:
+    df_print: paged
+    theme: cosmo
+    highlight: tango
+subtitle: Parte 2
+---
+
+```{r}
+set.seed(123)
+
+# import main libraries
+library(astsa)
+library(tidyverse)
+
+```
+
+
+## Generating random experience
+
+```{r, run experience}
+# initial index for numbered experience
+n_exp <- data.frame( index = seq(1:1000) )
+
+# data from theoratical model
+data <- arima.sim(n = 100, model = list( c(1,0,0) , ar = 0.5) )
+
+# random experience
+experience <- function(index) {
+  data <- arima.sim(n = 100, model = list( c(1,0,0) , ar = 0.5) ) # random AR process
+  m <- arima(data, order = c(1,0,0)) # estimating parameters
+  result <- m$coef[1] # extracting coeficients
+  return(result)
+}
+
+# execute random experiences
+coef_vector <- n_exp %>% pmap(experience) %>% bind_rows()
+
+```
+
+
+```{r fig.height=2}
+
+tsplot(data, col = 4, ylab = "", main = expression(AR(1)~~~phi==0.5))
+
+```
+
+## Comparing with theoratical distribution
+
+```{r}
+
+mean = 0.5
+sd = (1-0.5^2)/100
+
+t <- rnorm(1000, mean, sd )
+
+par(mfrow = c(2,2))
+
+hist(coef_vector$ar1, main = "Random experience")
+hist(t, main = "Theoretical distribution")
+boxplot(coef_vector$ar1)
+boxplot(t) 
+
+```
+```{r}
+# summary statistics
+
+summary(t)
+
+summary(coef_vector$ar1)
+
+```
+
+
+## Commenting on the results
+
+Based on the plots from both the random experience and a sample of 1000 observations from a theoretical distribution they both follow a normal distribution with mean around 0,48 - 0,5. Nonetheless, the random experience results shows a higher variance. Using  t-test for the difference of means with $HO: \mu_a - \mu_b = 0$ and a $\alpha = 0.05$ we reject the null hypothesis.
+
+```{r}
+
+t.test(coef_vector$ar1, t,  conf.level  = 0.95)
+
+```
