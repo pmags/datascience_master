@@ -1,0 +1,186 @@
+---
+title: "Estatística Aplicada"
+output: html_notebook
+---
+
+> Declaro que o presente relatório é de minha autoria e não foi utilizado previamente noutro curso ou unidade curricular, desta ou de outra instituição. As referências a outros autores (afirmações,ideias, pensamentos) respeitam escrupulosamente as regras da atribuição, e encontram-se devidamente indicadasno texto e nas referências bibliográficas, de acordo com as normas de referenciação. Tenho consciência de que a prática de plágio e auto-plágio constitui um ilícito académico.
+
+
+```{r}
+# import libraries
+library(tidyverse)
+library(modelr)
+library(MASS)
+
+# import data
+library(readr)
+securities_data_2016 <- read_csv("data/securities_data_2016.csv")
+
+```
+
+# Definição do problema e pressupostos
+
+## Definição da questão
+
+O desvio padrão de uma cotação é comument utilizado em finanças como um indicador do risco de investimento em determinada acção. Assumindo que a variação do preço de uma acção segue uma distribuição normal, o investidor pode, de uma forma simplificada, formular hipoteses sobre a evolução futura de determinada acção e tomar decisões com n graus de confiança. Neste contexto, elevada voluatilidade do preço das acções resulta numa gama demasiado larga de potenciais preços futuros a qual, dependendo da estratégia de investimento e da aversão ao risco, o investidor pode não estar interassado em determinado investimento em detrimento de outro.
+
+A divulgação anual dos relatórios financeiros é um dos acontecimentos mais marcantes do ano financeiro. Em conjunto com os reportes trimestrais, constituem um dos raros momentos do ano onde investidores e potenciais investidores (em especial investidores individuais) têm uma visão completa da atual performance das empresas.
+
+Este projecto estuda a potencial relação entre o desvio padrão de uma acção e um conjunto de rácios financeiros derivados das demosntrações financeiras anuais e que reflectem diferentes componentes da performance e valor da empresa para o ano de 2016.
+
+Existe uma relação linear entre o risco de investimento em determinada accção e os seus fundamentais?
+
+## Critérios de avaliação do modelo
+
+De entre as iterações do modelo será seleccionado o que apresentar o AIC mais reduzido.
+
+## Pressupostos assumidos
+
+Os seguintes pressupostos foram assumidos no âmbito deste project:
+
+1. *A variação dos preços de uma acção segue assimtopticamente uma distribuição normal*. Sendo $x_{s}$ o valor de cotação no momento $s$ é possível demonstrar que  $Z = x_{p} - x_{p-1]}$ é uma série estacionária e gaussina, no entanto esta demonstração está fora do âmbito deste trabalho.
+
+
+# Estudo do dados disponíveis
+
+## Descrição dos dados dispooníveis
+
+A base de dados utilizada baseia nos dados de cotação e declarações financeiras do índice S&P 500 para o ano de 2016 tal como disponibilizado no seguinte link:
+https://www.kaggle.com/dgawlik/nyse
+
+A base de dados contém as seguintes colunas:
+
+*Columns not to be used on model*
+
+**symbol:** O simbolo identificativo único da acção no mercado de acções de Nova York,
+
+**year:** O ano de 2016,
+ 
+**totalAssets:** O total do ativo liquida da empresa reportado no final do ano de 2016,
+
+
+*Columns used on models*
+
+**sd_closingPrice:** o desvio padrão da cotação da acção ao longo do ano de 2016. Valor calculado corrigido do efeito de eventuais *split price* que possam ter ocorrido ao longo do ano e que influênciam a cotação, 
+
+
+**quickRatio:** mensura a capacidade da empresa em fazer face às suas obrigações de curto prazo utilizando ativos de elevada liquidez teórica como disponibilidades e a contas a receber de clientes. Faz parte da familia de *rácio de liquidez*.
+Geralmente, quanto maior o valor deste rácio maior a capacidade da empresa em fazer face a eventuais choques de curto prazo. Rácio obtido aplicando a seguinte formula:
+
+$$\text{Quick Ratio} = \frac{Cash + \text{Accounts Receivable}}{\text{Current Liabilities}}$$
+
+**currentRatio:** rácio de liquidez que mensura a capacidade da empresa fazer face às necessidades de curto prazo recorrendo a ativos de curto prazo (ou seja receviveis num prazo previsto de 1 ano). É calculado pelo seguinte rácio:
+
+$$\text{Current Ratio}= \frac{\text{Current Asstes}}{\text{Current Liabilities}}$$
+
+
+**roe:** Return o Equity é um rácio de performance que mensura a remuneração do capital da empresa e é calculado através do seguinte rácio:
+
+$$ROE = \frac{\text{Net Income}}{\text{Shareholder's Equity}}$$
+
+**roa:** Return on Asset é um rácio de performance e mensura a remuneração do ativo da empresa e é calculado segundo a seguinte formula:
+
+$$ROA = \frac{\text{Net Income}}{\text{Total Assets}}$$
+
+**EBIT:** Resultados antes de encargos financeiros e impostos
+
+**industry:** Classificação do sector da empresa
+
+**size_cap:** Classificação da empresa tendo em conta a sua capitalização bolsista
+
+**netDebt_ebit:** Rácio de alavancagem da empresa, mensura a capacidade da empresa em fazer face ao endividamente externo. Na prática mensura quantos anos Ebitda demoraria a pagar o nível de divida actual, mantendo tudo o resto constante.
+
+```{r}
+
+glimpse(securities_data_2016)
+
+```
+
+
+```{r}
+
+summary(securities_data_2016)
+
+```
+
+```{r}
+
+plot(securities_data_2016$sd_closingPrice, securities_data_2016$pe_ratio)
+plot(securities_data_2016$average_closingPrice, securities_data_2016$pe_ratio)
+
+down_limit <- quantile(securities_data_2016$sd_closingPrice, 0.25) - 1.5*IQR(securities_data_2016$sd_closingPrice) 
+up_limit <- quantile(securities_data_2016$sd_closingPrice, 0.75) + 1.5*IQR(securities_data_2016$sd_closingPrice) 
+
+outlier_free <- securities_data_2016 %>% 
+  filter( 
+    sd_closingPrice > down_limit & sd_closingPrice < up_limit,
+    roe < 1000      )
+
+plot( outlier_free$netDebt_ebit, outlier_free$average_closingPrice )
+
+
+```
+
+
+# Modelação e avaliação
+
+
+```{r}
+
+models <- list(
+  
+  # individual models
+  qr_model =  "sd_closingPrice ~ quickRatio" ,
+  cr_model = "sd_closingPrice ~ currentRatio" ,
+  roe_mocel = "sd_closingPrice ~ roe" ,
+  ebit_model = "sd_closingPrice ~ EBIT" ,
+  roa_model = "sd_closingPrice ~ roa",
+  netDebt_model = "sd_closingPrice ~ netDebt_ebit",
+  industry_model = "sd_closingPrice ~ industry" ,
+  sizecap_model = "sd_closingPrice ~ size_cap" ,
+  sum_model = "sd_closingPrice ~ quickRatio + currentRatio + roe + EBIT + roa + netDebt_ebit + industry + size_cap"
+  
+)
+
+model_testing <- tibble(model = models) %>% 
+  mutate(model_name = names(model)) %>% 
+  mutate(model = map(model, as.formula)) %>% 
+  mutate(
+    fit = map(model, ~lm(., data = securities_data_2016), securities_data_2016 = securities_data_2016)
+  ) %>% 
+  mutate(
+      r2 = map_dbl( fit, ~modelr::rsquare(., data = securities_data_2016) ),
+      aic = map_dbl( fit, ~AIC(.) ),
+      summary = map(fit, ~summary(.))
+    ) %>% 
+  arrange(aic)
+
+```
+
+```{r}
+## Step wise selection
+
+## Anova
+
+
+```
+
+
+## Preparação do modelo
+
+
+## Avaliação do modelo
+
+
+## Validação dos pressupostos
+
+
+
+# Conclusão
+
+# Questões sobre Regressão Linear
+
+# Bibliografia
+
+
+

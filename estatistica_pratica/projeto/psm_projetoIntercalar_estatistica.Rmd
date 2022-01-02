@@ -1,0 +1,350 @@
+---
+title: "Estatistica Aplicada"
+author: "Pedro Magalhães (200202298)"
+date: '2022-01-03'
+output:
+  pdf_document: default
+  html_notebook: default
+subtitle: Projecto intercalar
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE)
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+
+# libraries
+library(xts)
+library(tidyverse)
+library(TTR)
+library(quantmod)
+library(lubridate)
+library(modelr)
+library(MASS)
+library(readr)
+
+```
+
+```{r, data load and transfor, include = FALSE}
+
+# stock data for Microsoft
+
+prices_split_adjusted <- read_csv("data/prices-split-adjusted.csv")
+fundamentals <- read_csv("data/fundamentals.csv")
+
+msft_prices <- prices_split_adjusted %>% 
+  filter(symbol == "MSFT") %>% 
+  left_join( dplyr::select(fundamentals, symbol = `Ticker Symbol`  , eps = `Earnings Per Share`, year = `Period Ending`) %>% filter(year(year) == 2016), by = "symbol") %>% 
+  mutate(
+    date = as.Date(date),
+    diff_close_open = ifelse( close - open >= 0, "intraday gain", "intraday loss"  )
+    ) %>% 
+  dplyr::select(-symbol, -year)
+  
+
+# convert to xts
+msft_prices_values_xts <- xts(dplyr::select(msft_prices, -date, -diff_close_open), order.by = msft_prices$date)
+msft_prices_charact_xts <- xts(dplyr::select(msft_prices, diff_close_open), order.by = msft_prices$date)
+msft_prices_2015_2016_oclh <- msft_prices_values_xts["2015/2016"]
+msft_prices_2015_2016_oclh$eps <- NULL
+
+
+```
+
+
+```{r, calculting main technical rations, include = FALSE }
+
+# add moving average
+msft_prices_xts <- msft_prices_values_xts
+
+
+msft_prices_xts$ema_15 <-  EMA(msft_prices_xts$close, n = 15) 
+msft_prices_xts$ema_30 <-  EMA(msft_prices_xts$close, n = 30)
+msft_prices_xts$evwma_30 <- EVWMA(msft_prices_xts$close, msft_prices$volume, 30)
+msft_prices_xts$rsi <-  RSI(msft_prices_xts$close)
+msft_prices_xts$roc <- ROC(msft_prices_xts$close)
+msft_prices_xts$momentum <- momentum(msft_prices_xts$close)
+msft_prices_xts$per_30 <- msft_prices_xts$ema_30/msft_prices_xts$eps
+msft_prices_xts$volatility <- volatility(msft_prices_xts$close, n = 15, calc="close") 
+
+avg_per30 = mean(msft_prices_xts$per_30, na.rm = TRUE)
+
+msft_prices_2015_2016_xts <- msft_prices_xts["2015/2016"]
+
+```
+
+
+```{r, build final dataset, include=FALSE}
+
+msft_prices_2015_2016_df <- 
+  data.frame(date =index(msft_prices_2015_2016_xts), coredata(msft_prices_2015_2016_xts)) %>% 
+  mutate(
+    per_30_mean = ifelse(per_30 > mean(per_30), "Higher than average","Lower than average"),
+    diff_close_open = ifelse( close - open >= 0, "intraday gain", "intraday loss" )
+  ) %>% 
+  dplyr::select(-open,-low,-high,-volume)
+
+```
+
+
+> Declaro que o presente relatório é de minha autoria e não foi utilizado previamente noutro curso ou unidade curricular, desta ou de outra instituição. As referências a outros autores (afirmações,ideias, pensamentos) respeitam escrupulosamente as regras da atribuição, e encontram-se devidamente indicadasno texto e nas referências bibliográficas, de acordo com as normas de referenciação. Tenho consciência de que a prática de plágio e auto-plágio constitui um ilícito académico.
+
+# Introdução
+
+## Definição da questão
+
+Este projeto analisa a relação entre a evolução diária da cotação da Microsoft no mercado de valores de Nova York para os anos de 2015 a 2016 e os indicadores de análise técnica mais utilizados com vista a apresentar um modelo de previsão da evolução de curto prazo da cotação.
+
+Este trabalho utiliza a informação de cotação diária das acções da Microsoft na bolsa de Nova York e na informação fundamental divulgada no final de cada ano em análise. Informação publicada no site da Kaggle.
+
+## Critérios de selecção do modelo
+
+Analisaremos o modelo que apresentar o melhor binómio, qualidade de ajustamento, calculado pelo $R^2$ e parsimónia dado pelo $AIC$,
+
+## Pressupostos e limitações
+
+Apesar deste projeto estudar a relação linear entre a cotação diária de encerramento e vários indicadores, do ponto de vista da teoria da análise de mercados e da avaliação de carteiras o uso de regressão constitui uma limitação e simplificação. Apesar de válida do ponto de vista académico, na realidade um modelo definido desta forma não permite retirar conclusões adequadas para suportar qualquer conclusão ou decisão.
+
+De entre as limitações e pressupostos assumidos, o mais importante é o pressuposto de **independência entre as observações e consequentemente dos residuos do modelo**. Dada a natureza dos dados utiluzados  é de esperar que as observações $y_s$ representando a quotação de fecho do momento S e $y_{s-h}$ representando a observação no momento S-H **não são independentes** estando portante perante uma série temporal.
+
+O estudo dos efeitos auto regressivos contidos na amostra da cotação está fora do âmbito deste projeto pelo que iremos desconsiderar este efeito no modelo e apenas levar em linha de conta sinais externos à série os quais serão dados pelos indicadores técnicos calculados.
+
+# Descrição dos dados 
+
+
+```{r echo=FALSE}
+
+summary(msft_prices_2015_2016_df)
+
+```
+
+A base de dados utilizada contém os seguintes dados:
+
+**date:** indice diário entre `r min(msft_prices_2015_2016_df$date)` e `r max(msft_prices_2015_2016_df$date)`
+
+**close:** preço de fecho da sessão para a acção
+
+```{r echo=FALSE}
+
+
+#plot( msft_prices_2015_2016_xts$close, main="Microsfot - Cotação diária de fecho")
+
+ts_plot <- autoplot(msft_prices_2015_2016_xts$close) + 
+  theme_bw()+
+  geom_line(colour = "blue")
+  
+
+ts_plot +
+  labs(
+    title = "Cotação de fecho",
+    subtitle = "Microsoft",
+    x ="",
+    y = "valores em $",
+    caption = "Fig 1: evolução da cotação de fecho das acções da Microsoft no mercado de valores de NY em 2015 e 2016") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) 
+  scale_x_date(limits = as.Date(c(min(index(msft_prices_2015_2016_xts)), max(index(msft_prices_2015_2016_xts)))), date_breaks = "2 months", date_labels = "%Y-%m")
+
+
+```
+
+**low:** mínimo diário a que a acção foi transaccionada
+
+**high:** máximo diário a que a acção foi transaccionada
+
+**volume:** volume de transacções diário
+
+**eps:** Earning per Share anual conforme reportado pelas demonstrações financeiras de final do ano e usando o seguinte rácio
+
+$$EPS = \frac{\text{Net Income}}{\text{Outstanding Shares}}$$
+
+**ema_15 e ema_30** Exponential Moving Average para a janela de 15 e 30 dias respectivamente.
+
+
+```{r echo=FALSE}
+
+ggplot(data = msft_prices_2015_2016_xts, aes(x = index(msft_prices_2015_2016_xts), y = close)) + 
+  geom_line(colour = "grey", size = 0.3) +
+  geom_line(aes(x = index(msft_prices_2015_2016_xts), y = ema_15, color = "ema_15"), size = 1) +
+  geom_line(aes(x = index(msft_prices_2015_2016_xts), y = ema_30, color = "ema_30"), size = 1) +
+  geom_line(aes(x = index(msft_prices_2015_2016_xts), y = evwma_30, color = "evwma_30"), size = 1) +
+  theme_bw() +
+  scale_color_manual(name = "", values = c("ema_15" = "blue", "ema_30" = "red", "evwma_30" = "green"))  +
+  labs(
+    title = "Cotação de fecho",
+    subtitle = "Microsoft",
+    x ="",
+    y = "valores em $",
+    caption = "Fig 1: evolução da cotação de fecho das acções da Microsoft no mercado de valores de NY em 2015 e 2016") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) 
+  scale_x_date(limits = as.Date(c(min(index(msft_prices_2015_2016_xts)), max(index(msft_prices_2015_2016_xts)))), date_breaks = "2 months", date_labels = "%Y-%m") 
+  
+  
+  
+
+```
+
+
+**evwma_30** Exponential Moving Average Volume Weigthed. Semelhante ao indicador anterior mas corrigido pelo volume de transacção diário
+
+**rsi:** Relative Strengh Index mensura a força do movimento de subida ou descida em face de um intervalo de evolução. Diferenças entre a evolução deste indicador e a cotação podem indiciar uma inversão da tendência
+
+**roc:** Percentagem de diferença entre n observações
+
+**momentum:** Diferença entre n observações (lag)
+
+**per_30:** Price Earning Ratio 30 days trailing
+
+**per_30_mean:** Variável categórica que assume valores se per_30 for superior à média dos dois anos então "Higher than average" caso contrário "Lower than average"
+
+**volatility:** Close-to-Close Volatility,
+
+**diff_close_open:** Variável categórica para se ocorreu um ganho intradia (Close > Open) ou uma perda (Close < Open)
+
+## Matriz de correlação
+
+```{r}
+
+corrplot::corrplot(cor( dplyr::select(msft_prices_2015_2016_df, -date, -per_30_mean, -diff_close_open, -eps), method = "pearson" ), method = "number")
+
+```
+
+# Modelos e avaliação
+
+
+```{r}
+
+models <- list(
+  
+  # individual models
+  ema_15 = "close ~ ema_15",
+  ema_30 = "close ~ ema_30",
+  evwma_30 = "close ~ evwma_30",
+  rsi = "close ~ rsi",
+  roc = "close ~ roc",
+  momentum = "close ~ momentum",
+  per_30 = "close ~ per_30",
+  volatility = "close ~ volatility",
+  per_30_mean = "close ~ per_30_mean",
+  diff_close_open = "close ~ diff_close_open",
+  complete = "close ~ ema_15 + ema_30 + evwma_30 + rsi + roc + momentum + per_30 + volatility + per_30_mean + diff_close_open"
+  
+)
+
+model_testing <- tibble(model = models) %>% 
+  mutate(model_name = names(model)) %>% 
+  mutate(model = map(model, as.formula)) %>% 
+  mutate(
+    fit = map(model, ~lm(., data = msft_prices_2015_2016_df), msft_prices_2015_2016_df = msft_prices_2015_2016_df)
+  ) %>% 
+  mutate(
+      r2 = map_dbl( fit, ~modelr::rsquare(., data = msft_prices_2015_2016_df) ),
+      aic = map_dbl( fit, ~AIC(.) ),
+      summary = map(fit, ~summary(.))
+    ) %>% 
+  arrange(aic)
+
+```
+```{r}
+
+dplyr::select(model_testing, -summary, -fit) %>% mutate(model = as.character(model))
+
+```
+
+O modelo mais completo é neste caso também o modelo mais parsimonio
+
+```{r}
+
+model_testing[[6]][[1]]
+
+```
+```{r}
+
+model <- lm(close ~ ema_15 + per_30_mean , data = msft_prices_2015_2016_df)
+
+summary(model)
+
+```
+
+
+# Questões sobre Regressão Linear
+
+Formula do modelo utilizado:
+
+$$ y = -5.59595 + 1.10626 x_{ema15} + 0.96067 x_{per_30} $$
+e.1) Mantendo tudo o resto constante, um aumento de 1 USD na média móvel exponencial a 15 dias representa um aumento de 1,11 USD no valor spot. Mantendo tudo o resto constante em média cotações spot superiores ao price earning ratio têm um acréscimo de 0,9 USD no preço. 
+
+e.2.)
+
+```{r}
+
+conf <- predict(model,filter(msft_prices_2015_2016_df, per_30_mean == "Lower than average"),int="conf")
+pred <- predict(model,filter(msft_prices_2015_2016_df, per_30_mean == "Lower than average"),int="pred")
+
+t <- filter(msft_prices_2015_2016_df, per_30_mean == "Lower than average") %>% 
+  cbind(dplyr::select(as.data.frame(conf), conf_lwr = lwr, conf_upr = upr, fit = fit)) %>% 
+  cbind(dplyr::select(as.data.frame(pred), -fit))
+
+
+ggplot(data = t, aes(x = ema_15, y = fit)) + 
+  geom_line(colour = "grey", size = 1) +
+  geom_line(aes(x = ema_15, y = conf_lwr), size = 0.5, colour = "blue") +
+  geom_line(aes(x = ema_15, y = conf_upr), size = 0.5, colour = "blue") +
+  geom_line(aes(x = ema_15, y = lwr), size = 0.5, colour = "red") +
+  geom_line(aes(x = ema_15, y = upr), size = 0.5, colour = "red") +
+  theme_bw() +
+  labs(
+    title = "Previsões modelo com banda de confiança e previsão",
+    subtitle = "Azul banda de confiança, vermelhor banda de estimação",
+    x ="Valores de Média Movel exponencial",
+    y = "",
+    caption = "") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+
+```
+
+e3)
+
+e4)
+
+```{r}
+
+sd(msft_prices_2015_2016_df$ema_15) * 2
+
+predict(model,data.frame(ema_15 = sd(msft_prices_2015_2016_df$ema_15) * 2, per_30_mean = "Lower than average"))
+
+```
+
+Um aumento de dois desvios padrão da média móvel exponencial implicaria o aumento de 7,72 USD no valor e fecho diário da cotação.
+
+e5)
+
+```{r}
+
+model <- lm(close ~ ema_15 * per_30_mean , data = msft_prices_2015_2016_df)
+
+summary(model)
+
+```
+
+Verificamos que a interacção entre as duas variáveis é estatisticamente significativa. Tendo a variável per_30_mean apenas duas categorias, para o caso de ser "Lower than average" a interacção é zero e um aumento de 1 USD de ema_15 resulta num aumento de 1.1 USD no entanto, caso contrário o efeito de 1 USD em ema_15 representa um aumento de 1.1 + 0.13.
+
