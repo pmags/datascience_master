@@ -24,10 +24,12 @@ library(lubridate)
 library(modelr)
 library(MASS)
 library(readr)
+library(gridExtra)
 
 ```
 
-```{r, data load and transfor, include = FALSE}
+
+```{r data load and transfor, include = FALSE}
 
 # stock data for Microsoft
 
@@ -36,10 +38,15 @@ fundamentals <- read_csv("data/fundamentals.csv")
 
 msft_prices <- prices_split_adjusted %>% 
   filter(symbol == "MSFT") %>% 
-  left_join( dplyr::select(fundamentals, symbol = `Ticker Symbol`  , eps = `Earnings Per Share`, year = `Period Ending`) %>% filter(year(year) == 2016), by = "symbol") %>% 
+  left_join( 
+    dplyr::select(fundamentals, symbol = `Ticker Symbol`, 
+                  eps = `Earnings Per Share`, year = `Period Ending`) %>% 
+      filter( year(year) == 2016 ), 
+    by = "symbol") %>% 
   mutate(
     date = as.Date(date),
-    diff_close_open = ifelse( close - open >= 0, "intraday gain", "intraday loss"  )
+    diff_close_open = ifelse( close - open >= 0, "intraday gain", 
+                              "intraday loss"  )
     ) %>% 
   dplyr::select(-symbol, -year)
   
@@ -54,12 +61,10 @@ msft_prices_2015_2016_oclh$eps <- NULL
 ```
 
 
-```{r, calculting main technical rations, include = FALSE }
+```{r calculting main technical rations, include = FALSE }
 
 # add moving average
 msft_prices_xts <- msft_prices_values_xts
-
-
 msft_prices_xts$ema_15 <-  EMA(msft_prices_xts$close, n = 15) 
 msft_prices_xts$ema_30 <-  EMA(msft_prices_xts$close, n = 30)
 msft_prices_xts$evwma_30 <- EVWMA(msft_prices_xts$close, msft_prices$volume, 30)
@@ -76,15 +81,21 @@ msft_prices_2015_2016_xts <- msft_prices_xts["2015/2016"]
 ```
 
 
-```{r, build final dataset, include=FALSE}
+```{r build final dataset, include=FALSE}
 
 msft_prices_2015_2016_df <- 
   data.frame(date =index(msft_prices_2015_2016_xts), coredata(msft_prices_2015_2016_xts)) %>% 
   mutate(
     per_30_mean = ifelse(per_30 > mean(per_30), "Higher than average","Lower than average"),
-    diff_close_open = ifelse( close - open >= 0, "intraday gain", "intraday loss" )
+    diff_close_open = ifelse( close - open >= 0, "intraday gain", "intraday loss" ),
+    volatility_cat = case_when(
+      volatility <= quantile(volatility,0.25) ~ "Low Volatility",
+      volatility <= quantile(volatility,0.5) ~ "Medium Low volatility",
+      volatility <= quantile(volatility,0.75) ~ "Medium High volatility",
+      TRUE ~ "High"
+    )
   ) %>% 
-  dplyr::select(-open,-low,-high,-volume)
+  dplyr::select(-open,-low,-high,-volume, -volatility)
 
 ```
 
@@ -95,24 +106,30 @@ msft_prices_2015_2016_df <-
 
 ## Definição da questão
 
-Este projeto analisa a relação entre a evolução diária da cotação da Microsoft no mercado de valores de Nova York para os anos de 2015 a 2016 e os indicadores de análise técnica mais utilizados com vista a apresentar um modelo de previsão da evolução de curto prazo da cotação.
+Investir no mercado de capitais implica tomar de decisões de compra de ativos financeiros num contexto de incerteza. De forma a tomarem decisões de investimento em linha com o seu perfil de risco e estratégias diferentes investidores recorrem a diferentes técnicas para entender e prever a evolução do preço do ativo transacionado e identificar oportunidades de entrada (compra) e saída (venda). 
 
-Este trabalho utiliza a informação de cotação diária das acções da Microsoft na bolsa de Nova York e na informação fundamental divulgada no final de cada ano em análise. Informação publicada no site da Kaggle.
+No caso de ações cotadas, e comum a utilização da análise técnica que consiste em modelar da evolução temporal do preço de uma ação em face da evolução de determinados indicadores técnicos.
+
+Este projeto estuda a relação linear entre a cotação diária das ações da Microsoft no mercado de valores de Nova York e alguns indicadores técnicos normalmente utilizados neste tipo de análises. 
+
+Foram utilizados dados públicos da cotação diária de abertura, de fecho, máxima e mínima entre 01-01-2015 e 31-12-2016 no mercado de Nova York assim como informação das demonstrações financeiras anuais divulgados no site Kaggle.com.
+
 
 ## Critérios de selecção do modelo
 
-Analisaremos o modelo que apresentar o melhor binómio, qualidade de ajustamento, calculado pelo $R^2$ e parsimónia dado pelo $AIC$,
+O modelo seleccionado é que aquela que apresenta o maior $R^2$ ajustado e menor $AIC$.
 
 ## Pressupostos e limitações
 
 Apesar deste projeto estudar a relação linear entre a cotação diária de encerramento e vários indicadores, do ponto de vista da teoria da análise de mercados e da avaliação de carteiras o uso de regressão constitui uma limitação e simplificação. Apesar de válida do ponto de vista académico, na realidade um modelo definido desta forma não permite retirar conclusões adequadas para suportar qualquer conclusão ou decisão.
 
-De entre as limitações e pressupostos assumidos, o mais importante é o pressuposto de **independência entre as observações e consequentemente dos residuos do modelo**. Dada a natureza dos dados utiluzados  é de esperar que as observações $y_s$ representando a quotação de fecho do momento S e $y_{s-h}$ representando a observação no momento S-H **não são independentes** estando portante perante uma série temporal.
+De entre as limitações e pressupostos assumidos, o mais importante é o pressuposto de **independência entre as observações e consequentemente dos resíduos do modelo**. Dada a natureza dos dados utilizados é de esperar que as observações $y_s$ representando a cotação de fecho do momento S e $y_{s-h}$ representando a observação no momento S-H **não são independentes** estando portante perante uma série temporal.
 
-O estudo dos efeitos auto regressivos contidos na amostra da cotação está fora do âmbito deste projeto pelo que iremos desconsiderar este efeito no modelo e apenas levar em linha de conta sinais externos à série os quais serão dados pelos indicadores técnicos calculados.
+O estudo dos efeitos autorregressivos contidos na amostra da cotação está fora do âmbito deste projeto pelo que iremos desconsiderar este efeito no modelo e apenas levar em linha de conta sinais externos à série os quais serão dados pelos indicadores técnicos calculados.
 
-# Descrição dos dados 
+# Análise exploratória dos dados
 
+## Descrição da base de dados
 
 ```{r echo=FALSE}
 
@@ -122,14 +139,15 @@ summary(msft_prices_2015_2016_df)
 
 A base de dados utilizada contém os seguintes dados:
 
-**date:** indice diário entre `r min(msft_prices_2015_2016_df$date)` e `r max(msft_prices_2015_2016_df$date)`
+**date:** 
 
-**close:** preço de fecho da sessão para a acção
+Índice diário entre `r min(msft_prices_2015_2016_df$date)` e `r max(msft_prices_2015_2016_df$date)`
 
-```{r echo=FALSE}
+**close:** 
 
+Cotação de fecho da sessão diária ajustado por eventuais splits de ações ocorridos durante o ano. (um split de ações significa aumentar o nº de ações em circulação mantendo o mesmo market cap o que gera uma variação abrupta na cotação no momento da realização e no choque de mercado)
 
-#plot( msft_prices_2015_2016_xts$close, main="Microsfot - Cotação diária de fecho")
+```{r close plot, echo=FALSE}
 
 ts_plot <- autoplot(msft_prices_2015_2016_xts$close) + 
   theme_bw()+
@@ -155,6 +173,47 @@ ts_plot +
 
 ```
 
+```{r close eda}
+
+hist <- ggplot(data = msft_prices_2015_2016_xts, aes( x = close ) ) + 
+  geom_histogram(bins = 5, fill = "white", color = "black") +
+  theme_bw() +
+  labs(
+    title = "Histograma Close",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 2: Histograma de cotação de fecho  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+
+box_plot <- ggplot(data = msft_prices_2015_2016_xts, aes( y = close ) ) + 
+  geom_boxplot() +
+  theme_bw() +
+  labs(
+    title = "Box Plot Close",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 3: Box Plot de cotação de fecho  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+grid.arrange(hist, box_plot, nrow = 1)
+
+```
+
+Esta é a Variável dependente que o modelo procura explicar. A figura 2 e 3 descrevem gráficamente a distribuição da amostra. A análise gráfica não parece sugerir que existam outliers.
+
 **low:** mínimo diário a que a acção foi transaccionada
 
 **high:** máximo diário a que a acção foi transaccionada
@@ -165,10 +224,13 @@ ts_plot +
 
 $$EPS = \frac{\text{Net Income}}{\text{Outstanding Shares}}$$
 
-**ema_15 e ema_30** Exponential Moving Average para a janela de 15 e 30 dias respectivamente.
+Os dados de low, high, volume e eps foram utilzados para cálculo dos rácio técnicos, mas não serão utilizados para efeito do modelo.
 
+**ema_15 e ema_30** 
 
-```{r echo=FALSE}
+Exponential Moving Average para a janela de 15 e 30 dias respectivamente.
+
+```{r closing and ema, echo=FALSE}
 
 ggplot(data = msft_prices_2015_2016_xts, aes(x = index(msft_prices_2015_2016_xts), y = close)) + 
   geom_line(colour = "grey", size = 0.3) +
@@ -192,40 +254,290 @@ ggplot(data = msft_prices_2015_2016_xts, aes(x = index(msft_prices_2015_2016_xts
   scale_y_continuous(labels=function(x) format(x, big.mark = ".", scientific = FALSE)) 
   scale_x_date(limits = as.Date(c(min(index(msft_prices_2015_2016_xts)), max(index(msft_prices_2015_2016_xts)))), date_breaks = "2 months", date_labels = "%Y-%m") 
   
-  
-  
 
 ```
 
+**evwma_30** 
 
-**evwma_30** Exponential Moving Average Volume Weigthed. Semelhante ao indicador anterior mas corrigido pelo volume de transacção diário
+Exponential Moving Average Volume Weigthed. Semelhante ao indicador anterior mas corrigido pelo volume de transacção diário
 
-**rsi:** Relative Strengh Index mensura a força do movimento de subida ou descida em face de um intervalo de evolução. Diferenças entre a evolução deste indicador e a cotação podem indiciar uma inversão da tendência
+**rsi:** 
 
-**roc:** Percentagem de diferença entre n observações
+Relative Strengh Index mensura a força do movimento de subida ou descida em face de um intervalo de evolução. Diferenças entre a evolução deste indicador e a cotação podem indiciar uma inversão da tendência
 
-**momentum:** Diferença entre n observações (lag)
 
-**per_30:** Price Earning Ratio 30 days trailing
+```{r rsi eda}
 
-**per_30_mean:** Variável categórica que assume valores se per_30 for superior à média dos dois anos então "Higher than average" caso contrário "Lower than average"
+hist <- ggplot(data = msft_prices_2015_2016_xts, aes( x = rsi ) ) + 
+  geom_histogram(bins = 5, fill = "white", color = "black") +
+  theme_bw() +
+  labs(
+    title = "Histograma Rsi",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 4: Histograma de rsi  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
 
-**volatility:** Close-to-Close Volatility,
 
-**diff_close_open:** Variável categórica para se ocorreu um ganho intradia (Close > Open) ou uma perda (Close < Open)
+box_plot <- ggplot(data = msft_prices_2015_2016_xts, aes( y = rsi ) ) + 
+  geom_boxplot() +
+  theme_bw() +
+  labs(
+    title = "Box Plot Rsi",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 5: Box Plot de rsi  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+plot <- ggplot(data = msft_prices_2015_2016_xts, aes( x = rsi, y = close ) ) + 
+  geom_point() + 
+  geom_smooth(method = lm, se = FALSE) +
+  theme_bw() +
+  labs(
+    title = "",
+    subtitle = "",
+    x ="",
+    y = "",
+    caption = "Fig 6: relação com fecho") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+grid.arrange(hist, box_plot, plot, layout_matrix = rbind(c(1, 2),c(3, 3)))
+
+```
+
+A análise gráfica não indicia a existência de outliers e aparenta existir uma relação linear com a variável dependente.
+
+**roc:** 
+
+Percentagem de diferença entre n observações
+
+```{r roc eda}
+
+hist <- ggplot(data = msft_prices_2015_2016_xts, aes( x = roc ) ) + 
+  geom_histogram(bins = 5, fill = "white", color = "black") +
+  theme_bw() +
+  labs(
+    title = "Histograma roc",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 4: Histograma de roc  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+
+box_plot <- ggplot(data = msft_prices_2015_2016_xts, aes( y = roc ) ) + 
+  geom_boxplot() +
+  theme_bw() +
+  labs(
+    title = "Box Plot roc",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 5: Box Plot de roc  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+plot <- ggplot(data = msft_prices_2015_2016_xts, aes( x = roc, y = close ) ) + 
+  geom_point() + 
+  geom_smooth(method = lm, se = FALSE) +
+  theme_bw() +
+  labs(
+    title = "",
+    subtitle = "",
+    x ="",
+    y = "",
+    caption = "Fig 6: relação com fecho") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+grid.arrange(hist, box_plot, plot, layout_matrix = rbind(c(1, 2),c(3, 3)))
+
+```
+
+A análise gráfica aponta para a existência de eventuais outliers que necessitariam de ser analisados mais detalhadamente. Comparada com a variável dependente vericamos que existem pontos que indiciam ter um "leverage" elevado.
+
+**momentum:** 
+
+Diferença entre n observações (lag)
+
+```{r momentum eda}
+
+hist <- ggplot(data = msft_prices_2015_2016_xts, aes( x = momentum ) ) + 
+  geom_histogram(bins = 5, fill = "white", color = "black") +
+  theme_bw() +
+  labs(
+    title = "Histograma momentum",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 4: Histograma de momentum  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+
+box_plot <- ggplot(data = msft_prices_2015_2016_xts, aes( y = momentum ) ) + 
+  geom_boxplot() +
+  theme_bw() +
+  labs(
+    title = "Box Plot momentum",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 5: Box Plot de momentum  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+plot <- ggplot(data = msft_prices_2015_2016_xts, aes( x = momentum, y = close ) ) + 
+  geom_point() + 
+  geom_smooth(method = lm, se = FALSE) +
+  theme_bw() +
+  labs(
+    title = "",
+    subtitle = "",
+    x ="",
+    y = "",
+    caption = "Fig 6: relação com fecho") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+grid.arrange(hist, box_plot, plot, layout_matrix = rbind(c(1, 2),c(3, 3)))
+
+```
+
+Conclusões idênticas às dp ROC
+
+**per_30:** 
+
+Price Earning Ratio 30 days trailing
+
+**per_30_mean:** 
+
+Variável categórica que assume valores se per_30 for superior à média dos dois anos então "Higher than average" caso contrário "Lower than average"
+
+**volatility:** 
+
+Variância Close-to-Close para uma janela de 15 dias.
+
+```{r volatility eda}
+
+hist <- ggplot(data = msft_prices_2015_2016_xts, aes( x = volatility ) ) + 
+  geom_histogram(bins = 5, fill = "white", color = "black") +
+  theme_bw() +
+  labs(
+    title = "Histograma volatility",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 4: Histograma de volatility  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+
+box_plot <- ggplot(data = msft_prices_2015_2016_xts, aes( y = volatility ) ) + 
+  geom_boxplot() +
+  theme_bw() +
+  labs(
+    title = "Box Plot volatility",
+    subtitle = "Microsoft",
+    x ="",
+    y = "",
+    caption = "Fig 5: Box Plot de volatility  ") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+plot <- ggplot(data = msft_prices_2015_2016_xts, aes( x = volatility, y = close ) ) + 
+  geom_point() + 
+  geom_smooth(method = lm, se = FALSE) +
+  theme_bw() +
+  labs(
+    title = "",
+    subtitle = "",
+    x ="",
+    y = "",
+    caption = "Fig 6: relação com fecho") +
+  theme(
+    text =  element_text( size = 8),
+    plot.title = element_text(size = 10, lineheight = .9, face = "bold"),
+    plot.caption = element_text(hjust = 0.5, face = "italic"),
+    plot.caption.position = "plot"
+    ) 
+
+grid.arrange(hist, box_plot, plot, layout_matrix = rbind(c(1, 2),c(3, 3)))
+
+```
+
+Parece existir uma relação negativa entre as variáveis indiciando quanto maior a volatilidade menor o preço.
+
+**diff_close_open:** 
+
+Variável categórica para se ocorreu um ganho intradia (Close > Open) ou uma perda (Close < Open)
+
 
 ## Matriz de correlação
 
-```{r}
+```{r correplot}
 
-corrplot::corrplot(cor( dplyr::select(msft_prices_2015_2016_df, -date, -per_30_mean, -diff_close_open, -eps), method = "pearson" ), method = "number")
+corrplot::corrplot(cor( dplyr::select(msft_prices_2015_2016_df, -date, -per_30_mean, -diff_close_open, -eps, -volatility_cat), method = "pearson" ), method = "number")
 
 ```
 
+A variável dependente em estudo apresenta uma elevada correlação positiva relativamente à média móvel exponencial a 15, 30 e 30 dias ajustado pelo volume assim como com Price Earning Ratio com 30 dias. Esta conclusão não é surpreendente dado a natureza dos indicadores calculados.
+
+As conclusões da matriz form incorporadas no modelo tendo sido apenas considerado a média movel exponencial ajustada pelo volume por se tratar de um indicador sintetico mais completo.
+
 # Modelos e avaliação
 
-
-```{r}
+```{r, model fit}
 
 models <- list(
   
@@ -237,10 +549,12 @@ models <- list(
   roc = "close ~ roc",
   momentum = "close ~ momentum",
   per_30 = "close ~ per_30",
-  volatility = "close ~ volatility",
+  volatility = "close ~ volatility_cat",
   per_30_mean = "close ~ per_30_mean",
   diff_close_open = "close ~ diff_close_open",
-  complete = "close ~ ema_15 + ema_30 + evwma_30 + rsi + roc + momentum + per_30 + volatility + per_30_mean + diff_close_open"
+  complete = "close ~ ema_15 + ema_30 + evwma_30 + rsi + roc + momentum + per_30 + volatility_cat + per_30_mean + diff_close_open" ,
+  adjusted = "close ~ evwma_30 + rsi + momentum + per_30 + volatility_cat + per_30_mean + diff_close_open",
+  relation = "close ~ evwma_30*volatility_cat + rsi * volatility_cat + momentum * volatility_cat + per_30 * volatility_cat + per_30_mean + diff_close_open"
   
 )
 
@@ -258,13 +572,13 @@ model_testing <- tibble(model = models) %>%
   arrange(aic)
 
 ```
-```{r}
+```{r, model table}
 
 dplyr::select(model_testing, -summary, -fit) %>% mutate(model = as.character(model))
 
 ```
 
-O modelo mais completo é neste caso também o modelo mais parsimonio
+
 
 ```{r}
 
@@ -273,38 +587,67 @@ model_testing[[6]][[1]]
 ```
 ```{r}
 
-model <- lm(close ~ ema_15 + per_30_mean , data = msft_prices_2015_2016_df)
+model <- lm(close ~ evwma_30*volatility_cat + rsi * volatility_cat + per_30 , data = msft_prices_2015_2016_df)
 
 summary(model)
 
 ```
 
+```{r}
+
+stepAIC(model, direction='back')
+
+```
+
+Não existindo qualquer fundamento teórico que obrigasse à inclusão de qualquer das variáveis utilizadas, retiramos para o modelo final aquelas cuja a Hipoteses nula não pudesse ser refutada. Modelo obtido através de Backward Selection.
+
+# Estudo dos residuos
+
+```{r residuals}
+par(mfrow = c(2,2))
+
+hist(rstandard(model))
+plot(model, which=2)
+plot(model, which=3)
+
+```
+Da análise gráfica não parece existir indicidos de heterostacidade nos resíduos, mas o gráfico de Normal Q-Q apresenta algum desvio que pode impactar o resultado de testes estatísticos.
 
 # Questões sobre Regressão Linear
 
-Formula do modelo utilizado:
+e.1) Mantendo tudo o resto constante, um aumento de 1 USD na média móvel exponencial ponderado pelo volume a 30 dias representa um aumento de -0.08 USD no valor spot. Mantendo tudo o resto constante, em média volatilidade a 30 dias baixa resultam em mais 5 USD na cotação, Média alta em 4,1 USD e Média Lpw em 3,89 USD face a se tivesse uma Volatilidade Alta.
 
-$$ y = -5.59595 + 1.10626 x_{ema15} + 0.96067 x_{per_30} $$
-e.1) Mantendo tudo o resto constante, um aumento de 1 USD na média móvel exponencial a 15 dias representa um aumento de 1,11 USD no valor spot. Mantendo tudo o resto constante em média cotações spot superiores ao price earning ratio têm um acréscimo de 0,9 USD no preço. 
+
 
 e.2.)
 
 ```{r}
 
-conf <- predict(model,filter(msft_prices_2015_2016_df, per_30_mean == "Lower than average"),int="conf")
-pred <- predict(model,filter(msft_prices_2015_2016_df, per_30_mean == "Lower than average"),int="pred")
+table(msft_prices_2015_2016_df$volatility_cat)
 
-t <- filter(msft_prices_2015_2016_df, per_30_mean == "Lower than average") %>% 
+t <- msft_prices_2015_2016_df %>% 
+  dplyr::select( close, evwma_30 ) %>% 
+  mutate( rsi = mean(msft_prices_2015_2016_df$rsi), 
+         per_30 = mean(msft_prices_2015_2016_df$per_30),
+         volatility_cat = "Medium High volatility")
+
+conf <- predict(model,t ,int="conf")
+pred <- predict(model,t ,int="pred")
+
+
+# evwma_30 * volatility_cat + rsi * volatility_cat + per_30
+
+t <- t %>% 
   cbind(dplyr::select(as.data.frame(conf), conf_lwr = lwr, conf_upr = upr, fit = fit)) %>% 
   cbind(dplyr::select(as.data.frame(pred), -fit))
 
 
-ggplot(data = t, aes(x = ema_15, y = fit)) + 
+ggplot(data = t, aes(x = evwma_30, y = fit)) + 
   geom_line(colour = "grey", size = 1) +
-  geom_line(aes(x = ema_15, y = conf_lwr), size = 0.5, colour = "blue") +
-  geom_line(aes(x = ema_15, y = conf_upr), size = 0.5, colour = "blue") +
-  geom_line(aes(x = ema_15, y = lwr), size = 0.5, colour = "red") +
-  geom_line(aes(x = ema_15, y = upr), size = 0.5, colour = "red") +
+  geom_line(aes(x = evwma_30, y = conf_lwr), size = 0.5, colour = "blue") +
+  geom_line(aes(x = evwma_30, y = conf_upr), size = 0.5, colour = "blue") +
+  geom_line(aes(x = evwma_30, y = lwr), size = 0.5, colour = "red") +
+  geom_line(aes(x = evwma_30, y = upr), size = 0.5, colour = "red") +
   theme_bw() +
   labs(
     title = "Previsões modelo com banda de confiança e previsão",
@@ -322,29 +665,26 @@ ggplot(data = t, aes(x = ema_15, y = fit)) +
 
 ```
 
-e3)
+e3) 
+
+
 
 e4)
 
 ```{r}
 
-sd(msft_prices_2015_2016_df$ema_15) * 2
+dt <- msft_prices_2015_2016_df %>% 
+  mutate(evwma_30 = evwma_30 + sd(msft_prices_2015_2016_df$evwma_30) * 2 )
 
-predict(model,data.frame(ema_15 = sd(msft_prices_2015_2016_df$ema_15) * 2, per_30_mean = "Lower than average"))
-
-```
-
-Um aumento de dois desvios padrão da média móvel exponencial implicaria o aumento de 7,72 USD no valor e fecho diário da cotação.
-
-e5)
-
-```{r}
-
-model <- lm(close ~ ema_15 * per_30_mean , data = msft_prices_2015_2016_df)
+model <- lm(close ~ evwma_30*volatility_cat + rsi * volatility_cat + per_30 , data = dt)
 
 summary(model)
 
 ```
 
-Verificamos que a interacção entre as duas variáveis é estatisticamente significativa. Tendo a variável per_30_mean apenas duas categorias, para o caso de ser "Lower than average" a interacção é zero e um aumento de 1 USD de ema_15 resulta num aumento de 1.1 USD no entanto, caso contrário o efeito de 1 USD em ema_15 representa um aumento de 1.1 + 0.13.
+Sem impacto significativo no modelo e nos coefecientes estimados.
+
+e5) Efeito já incluido no modelo estudado
+
+
 

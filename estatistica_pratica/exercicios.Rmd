@@ -1,0 +1,81 @@
+---
+title: "Exercicios estatistica"
+author: "Pedro Magalhães"
+date: "13/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercicios de estatistica
+
+## Intervalos de confiança
+
+**exercicio 1**
+
+n = 100
+mu = 161
+sd = 8
+
+a) 95% confidence interval
+b) Increase to 99% and what happen?
+
+a)       
+
+```{r}
+
+z <-  qnorm(1-0.05/2)
+sd <- 8
+n <- 100
+mean <- 161
+
+lower_interval <- mean - (sd/sqrt(n))*z
+higher_interval <- mean + (sd/sqrt(n))*z
+
+c(lower_interval, higher_interval)
+
+```
+
+b) 
+
+
+```{r}
+
+z <-  qnorm(1-0.01/2)
+sd <- 8
+n <- 100
+mean <- 161
+
+lower_interval <- mean - (sd/sqrt(n))*z
+higher_interval <- mean + (sd/sqrt(n))*z
+
+c(lower_interval, higher_interval)
+
+```
+
+Confidence interval increases
+
+
+$$\hat{X} - \frac{\sigma}{\sqrt{n}}Z_{1-\alpha/2} < \mu < \hat{X} +  \frac{\sigma}{\sqrt{n}}Z_{1-\alpha/2} $$
+
+**exercicio 2**
+
+```{r}
+
+
+
+z <-  qnorm(1-0.01/2)
+sd <- 0.03
+n <- 200
+mean <- 4.3
+
+lower_interval <- mean - (sd/sqrt(n))*z
+higher_interval <- mean + (sd/sqrt(n))*z
+
+c(lower_interval, higher_interval)
+
+```
+
+
