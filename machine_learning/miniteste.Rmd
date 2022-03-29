@@ -1,0 +1,28 @@
+---
+title: "ML-miniteste"
+author: "Pedro Magalhães"
+date: "29/03/2022"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+py_config()
+
+```
+
+## Explain how the k-nearest neighbourhood aproximates the Bayes classifier reasoning. Explain what are the assumptions and what are the potential risks of that kind of approximation
+
+
+
+## Given a data sample, can we in general use Machine Learning to obtain the precise Bayes Optimal Decision Boundary? Provide a clear enough justification
+
+Not precise, we get an approximation
+
+
+## In a given well balanced binary classification problem, the sets of points corresponding to each of the 2 classes follow known distribution given by $P(X|k1)$ and $P(X|k2)$. How can we determine if a given point x belongs to class k1 or k2? Which points x are on the Optimal Bayes Decision Boundary?
+
+
+$$c = min E(L(01)P(X|k1) + L(01)P(X|k2))$$

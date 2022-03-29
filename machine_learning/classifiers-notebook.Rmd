@@ -1,0 +1,201 @@
+---
+title: "classifiers-notebook"
+author: "Pedro Magalhães"
+date: "29/03/2022"
+output: html_document
+---
+
+
+```{r setup, include = FALSE}
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+py_config()
+
+```
+
+# Introduction to simple linear decision boundaries
+
+```{python}
+
+# Importing needed libraries
+import numpy as np
+from numpy import concatenate
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib import colors
+from sklearn.datasets import make_blobs
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier as knn
+
+```
+
+
+## Build random data to be used on our examples
+
+```{python}
+
+plt.clf()
+
+size = 100
+covblue = np.matrix([[5,-2],[-2,2]]) # Returns a matrix from an array-like object, or from a string of data. This creates a matrix with 2 x 2
+covorange = np.matrix([[3,-.5],[-.5,5]])
+
+mean_blue = np.array([6, 4]) # creates a numpy array
+mean_orange = np.array([5, 8])
+
+
+# random multivariate_normal Draw random samples from a multivariate normal distribution. The multivariate normal, multinormal or Gaussian distribution is a generalization of the one-dimensional normal distribution to higher dimensions.
+# mean is given by the array and 2 means are passed (2 clusters), cov is the covariance matrix
+
+blue = np.random.multivariate_normal(mean = mean_blue, cov = covblue, size = size)
+orange = np.random.multivariate_normal(size = size, mean=mean_orange, cov=covorange)
+
+# converts result into dataframes with 2 columns made of concat the first and second columns of arrays
+
+data = pd.DataFrame({
+    'x1': concatenate((blue[:,0],orange[:,0])),
+    'x2': concatenate((blue[:,1],orange[:,1])),
+    'y': [0]*size + [1]*size
+})
+
+# # a crude way of setting colors - using color maps is more powerful, Gives 0 to blue and 1 to orange acording to what is on column Y of dataframe
+clrs = ['blue','orange']
+classcolors = list(map(lambda x: clrs[x],data.y))
+
+#ax=plt.axes()
+plt.scatter(data.x1,data.x2,color=classcolors)
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+
+plt.show()
+
+```
+Another option is to use make blobs form sklearn package. 
+
+```{python}
+
+plt.clf()
+
+# random_stata Determines random number generation for dataset creation.
+# It creates 2 numpy arrays one named X and other named y
+
+X, y = make_blobs( n_samples = 200, n_features = 2, centers = 2, random_state = 0)
+
+cmap = colors.ListedColormap(["blue", "orange"])
+
+ax=plt.axes()
+ax.scatter(X[:,0],X[:,1],color=cmap(y))
+ax.set_xlabel('$x_1$')
+ax.set_ylabel('$x_2$')
+plt.show() # method matplotlib.pyplot.show() with alias plt
+
+```
+
+## Linear boundary
+
+Model resulting from $y = \beta_{0} + \beta_{1}x_{1} + \beta_{2}x_{2}$ with decision at $y = 0.5$.
+ 
+```{python}
+
+plt.clf()
+
+# LinearRegression fits a linear model by minimizing the residual sum of squares.
+# Fits a linear model with first impute is X of training data(features) and y is target array
+
+model = LinearRegression().fit(X,y)
+
+# boundary
+a0 = model.intercept_
+a1 = model.coef_[0]
+a2 = model.coef_[1]
+
+a0bound = (0.5 - a0)/a2
+a1bound = -a1/a2
+
+xbound=np.array([min(X[:,0])-.2,max(X[:,0])+.2])
+ybound=np.array(a0bound + xbound*a1bound)
+
+plt.axes()
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red') # adds a horizontal line
+plt.show()
+
+```
+
+## Logistic regression
+
+For this case logistic regression is more robust
+
+```{python}
+
+plt.clf()
+
+model = LogisticRegression(random_state = 0).fit(X, y)
+
+# Retrieve the model parameters.
+b = model.intercept_[0]
+w1, w2 = model.coef_.T
+
+# Calculate the intercept and gradient of the decision boundary.
+c = -b/w2
+m = -w1/w2
+
+# prepare the points for drawing the linear boundary
+xmin, xmax = min(X[:,0])-.2, max(X[:,0])+.2
+ymin, ymax = min(X[:,1])-.2, max(X[:,1])+.2
+xbound = np.array([xmin, xmax])
+ybound = m*xbound + c
+
+# replot, but now with the boundary
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red')
+plt.show()
+
+```
+
+## Using knn 
+
+It is not limited by a given shape
+
+```{python}
+
+
+plt.clf()
+
+
+model = knn(n_neighbors = 1).fit(X,y)
+
+def plot_classifier_boundary(model,X,y,h = .05):
+    # this function can be used with any sklearn classifier
+    # ready for two classes but can be easily extended
+    cmap_light = colors.ListedColormap(['lightsteelblue', 'peachpuff'])
+    x_min, x_max = X[:, 0].min()-.2, X[:, 0].max()+.2
+    y_min, y_max = X[:, 1].min()-.2, X[:, 1].max()+.2
+    # generate a grid with step h
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), # np.arange return evenly spaced values within a given interval
+                         np.arange(y_min, y_max, h))
+    # the method ravel flattens xx and yy
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()]) # Return a contiguous flattened array.
+    Z = Z.reshape(xx.shape)
+    plt.contourf(xx, yy, Z, cmap=cmap_light)
+    plt.xlim((x_min,x_max))
+    plt.ylim((y_min,y_max))
+
+
+plot_classifier_boundary(model,X,y)
+
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red')
+
+plt.show()
+
+```
+
