@@ -1,0 +1,24 @@
+---
+title: "ISL - exercises"
+author: "Pedro Magalhães"
+date: "30/03/2022"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+py_config()
+
+```
+
+# Intro
+
+Lorem ipsum
+
+# Chapter 2:
+
+## Conceptual
+
+**1.a)** 

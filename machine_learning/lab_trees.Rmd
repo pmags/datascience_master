@@ -1,0 +1,119 @@
+---
+title: "lab-trees"
+author: "Pedro Magalhães"
+date: "30/03/2022"
+output: html_document
+---
+
+
+```{r setup, include = FALSE}
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+py_config()
+
+```
+
+
+# Aims of this lab
+
+- [ ] Understand and explain the resulting decision tree using IRIS
+- [ ] Observe and explain Decision Trees instability with changes in data
+- [ ] Compare other ML algorithms with Decision Trees
+- [ ] Reduce overfitting by controlling tree complexity
+
+# 1. Generate a decision tree for dataset Iris using max depth of 1 and entropy as search criterion
+
+
+```{python}
+
+# laods iris from sklearn
+from sklearn.datasets import load_iris
+
+# Decision tree based on entropy or gini
+from sklearn.tree import DecisionTreeClassifier as DTC
+from sklearn.tree import plot_tree
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+```
+
+```{python}
+
+# fits a decision tree
+iris = load_iris()
+
+# Container object exposing keys as attributes. Bunch objects are sometimes used as an output for functions and methods. They extend dictionaries by enabling values to be accessed by key, bunch["value_key"], or by an attribute, bunch.value_key.
+
+# Similar to list in R
+
+X = iris.data
+y = iris.target
+
+model = DTC(criterion = "entropy", max_depth = 1).fit(X,y)
+plot_tree(model)
+
+plt.show()
+
+
+
+```
+
+## What is the topmost test?
+
+It is X[3] <= 0.8. Or that column 3 is lower than 0.8
+
+## How is it chosen? Justify with plots and partial calculations.
+
+```{python}
+
+# https://stackoverflow.com/questions/20156951/how-do-i-find-which-attributes-my-tree-splits-on-when-using-scikit-learn
+# https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+
+print(model.tree_.threshold)
+
+```
+
+
+```{python}
+plt.clf()
+
+def entropy2(p=0.5):
+    q=1-p
+    return -p*np.log2(p)-q*np.log2(q)
+  
+p = np.arange(0.01,0.99,0.01)
+plt.plot(p,entropy2(p))
+plt.title('How entropy varies with class proportion')
+plt.xlabel('p')
+plt.ylabel('entropy')
+
+plt.show()
+
+```
+
+
+```{python}
+
+plt.clf()
+
+pred = 3
+
+orderpred = np.argsort(X[:,pred])
+plt.scatter(X[orderpred,pred],y[orderpred] )
+plt.show()
+
+```
+```{python}
+
+for i in orderpred:
+    print([X[i,3],y[i]])
+
+```
+
+
+
+- Which regions does it define?
+- Obtain alternative trees with bootstrap samples. Are they different?
