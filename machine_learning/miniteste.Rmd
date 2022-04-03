@@ -16,13 +16,31 @@ py_config()
 ## Explain how the k-nearest neighbourhood aproximates the Bayes classifier reasoning. Explain what are the assumptions and what are the potential risks of that kind of approximation
 
 
+In theory we would like to always predict data using bayes classifier. But for real data we do not know the conditional distribution of Y given X. Therefore, the computation of the bayes classifier is impossible. Nearest Neighbors is an approach to estimate the conditional distribution of Y given X. 
+
+Given a positive integer K and a test observation $x_{0}$, the KNN classifier first identifies the K points in the training data that are closest to $x_{0}$, represented by $N_{0}$. It then estimates the conditional probability for class j as the fraction oif points in $N_{0}$ whose response values equal j:
+
+$$Pt(Y = j | X = x_{0}) = \frac{1}{K}\sum_{1EN_{0}}I(y_{i}=j)$$
+
+Finally applies Bayes rules and classifies the test observation $x_{0}$ to the class with the largest probability.
+
+This means that all predictions are locally calculated. Although with a small bayes (model adapts into data nuances), it can easly overfit by beigng to close to data and is sensitive to data increasese.
+
+This model assumes that similar things stay together and are equaly densely distributed. 
+
 
 ## Given a data sample, can we in general use Machine Learning to obtain the precise Bayes Optimal Decision Boundary? Provide a clear enough justification
 
-Not precise, we get an approximation
+In theory we would like to always predict data using bayes classifier. But for real data we do not know the conditional distribution of Y given X. Therefore, the computation of the bayes classifier is impossible.
+
+Machine learning methods can give an approximation
+
 
 
 ## In a given well balanced binary classification problem, the sets of points corresponding to each of the 2 classes follow known distribution given by $P(X|k1)$ and $P(X|k2)$. How can we determine if a given point x belongs to class k1 or k2? Which points x are on the Optimal Bayes Decision Boundary?
 
+To know which points belong to k1 or k2 ww would need to know the probability they are k1 or k2 given x that is, we need their conditional probabilities. Therefore we need P(k1 | x) and P ( k2 | x). Using bayes theorem we know
 
-$$c = min E(L(01)P(X|k1) + L(01)P(X|k2))$$
+P(k1 | X ) = Pr(X|k1) * P(k1)/Pr(x) being Pr(x) = 1 in this case and P(k1) = p(k2) since they are perfectly balanced. Therefore, given that we now know their conditional probabilities we use this Bayes classifier and classify each $x_{i} \in X$ for the highest probability. It will be = k1 if Pr(k1 | X) = Pr(k2 | X).
+
+The bayes boundary will be given by the point of confusion where P(k1|X) = Pr(k2|X)

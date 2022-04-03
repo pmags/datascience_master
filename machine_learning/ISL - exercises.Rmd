@@ -21,4 +21,77 @@ Lorem ipsum
 
 ## Conceptual
 
-**1.a)** 
+**1.Flexible method vs inflexible method**
+
+*A)* Inflexible is expected to perform better since it will have less tendency to overfit 
+
+*B)* Flexible since it is more adaptable
+
+*C)* Flexible since it can adapt to specificities
+
+*D)* 
+
+1. (a) better - a more flexible approach will fit the data closer and with the
+large sample size a better fit than an inflexible approach would be obtained
+
+(b) worse - a flexible method would overfit the small number of observations
+
+(c) better - with more degrees of freedom, a flexible model would obtain a
+better fit
+
+(d) worse - flexible methods fit to the noise in the error terms and increase variance
+
+
+**2. Classification vs regression and prediction vs inference**
+
+*A)* regression, inference
+
+*B)* prediction, classification
+
+*C)* regression, inference
+
+2. (a) regression. inference. quantitative output of CEO salary based on CEO
+firm's features.
+n - 500 firms in the US
+p - profit, number of employees, industry
+
+(b) classification. prediction. predicting new product's success or failure.
+n - 20 similar products previously launched
+p - price charged, marketing budget, comp. price, ten other variables
+
+(c) regression. prediction. quantitative output of % change
+n - 52 weeks of 2012 weekly data
+p - % change in US market, % change in British market, % change in German market
+
+
+
+**5.** A more flexible model is capabale of model no parametric distributions. An example is a classification problem without a very heterogeneous division between classes. a less flexible approach is more desirable in a situation when understanding a model is more important
+
+5. The advantages for a very flexible approach for regression or classification
+are obtaining a better fit for non-linear models, decreasing bias.
+
+The disadvantages for a very flexible approach for regression or classification
+are requires estimating a greater number of parameters, follow the noise too
+closely (overfit), increasing variance.
+
+A more flexible approach would be preferred to a less flexible approach when we
+are interested in prediction and not the interpretability of the results.
+
+A less flexible approach would be preferred to a more flexible approach when we
+are interested in inference and the interpretability of the result.
+
+  - Flexible methods work well when the underlying function is non-linear. The predictions in general have a lower bias but can have a higher variance, as these models are more likely to overfit the data. 
+  
+  - Less flexible methods do not tend to overfit the data but can have a high bias when the underlying function is non-linear. They can also use fewer observations and parameters, particularly when it is assumed that the underlying function is linear. Flexible methods tend to require a larger number of observations and parameters, and can lead to overfitting (higher variance). 
+  
+  - Flexible methods (non-parametric methods) are preferable when we make no assumptions about the function to be estimated.Most real-life relationships are non-linear and so a non-parametric approach is better suited to modelling them. Flexible models by their nature are more complex and less interpretable than their linear counterparts, so even though their predictions might be more accurate, we may not be able to explain why it has made those predictions (a black box model).
+  
+  - Less flexible methods (parametric) are useful if we assume or know that the underlying function is linear. As a linear relationship is assumed, the model needs to predict fewer parameters than a non-parametric method. Additionally, these models are more interpretable, and so will be preferred when we are interested in making inferences or the interpretability of the results. 
+  
+
+
+**7.** 
+a) 9, 4, 10, 5, 2, 3
+b) with k = 1, "Green"
+c) k = 3, {"Red","Green", "Red"}, "Red" (2/3)
+d) small, since it is more flexible and catches the specificities

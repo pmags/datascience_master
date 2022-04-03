@@ -1,0 +1,12 @@
+---
+title: "ESL - exercises"
+author: "Pedro Magalhães"
+date: "02/04/2022"
+output: html_document
+---
+
+# Intro
+
+# Chapter 2
+
+**2.1.**

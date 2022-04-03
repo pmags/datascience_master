@@ -1,0 +1,466 @@
+---
+title: "Simple Classifiers- exercises"
+author: "Pedro Magalhães"
+date: "03/04/2022"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(reticulate)
+reticulate::use_condaenv(condaenv = "venv_mestrado", required= TRUE)
+py_config()
+
+```
+
+
+```{python}
+
+# Importing needed libraries
+# Dataframes
+import pandas as pd
+
+# Numbers
+import numpy as np
+
+# Plotting
+import matplotlib.pyplot as plt
+# colors is useful for mapping colors to numbers
+from matplotlib import colors
+
+# Classifiers
+from sklearn.neighbors import KNeighborsClassifier as kNN
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
+
+# Evaluation
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+```
+
+We have seen how linear regression can be adapted to binary classification. This was an ad-hoc approach that worked well with a well balanced dataset.
+
+## Generate unbalanced 2-dimensional datasets (or define a function to generate binary classification datasets that can have different number of examples for each of the classes).
+
+```{python}
+
+plt.clf()
+# The higger the inbalance the more classification by regression fails
+
+from sklearn.datasets import make_blobs
+
+
+# make blobs generatye isotropic Guassian blobs. 
+# n_samples = as an array gives the number to pass to each cluster sample size
+
+X, y = make_blobs(n_samples=[5000,100], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+ax = plt.axes()
+ax.scatter(X[:,0],X[:,1], color = cmap(y))
+ax.set_xlabel("x_1")
+ax.set_ylabel("x_2")
+
+plt.show()
+
+# Create an embalanced set of X and y numpy arrays
+
+```
+## Try the classifier based on linear regression (CBLR) with the threshold 0.5. Draw the boundary for datasets with balanced classes (50/50), slightly unbalanced (40/60), very unbalanced (20/80), extremely unbalanced (5/95). You can study other scenarios as well. Try different thresholds. What is the relation between the boundary, the unbalacement and the theshold.
+
+### 50/50 balanced
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[500,500], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LinearRegression().fit(X,y)
+
+# find boundary
+a0 = model.intercept_
+a1 = model.coef_[0]
+a2 = model.coef_[1]
+
+a0bound = (0.5 - a0)/a2
+a1bound = -a1/a2
+
+xbound=np.array([min(X[:,0])-.2,max(X[:,0])+.2])
+ybound=np.array(a0bound+xbound*a1bound)
+
+plt.axes()
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+```
+
+### 40/60 balanced
+
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[400,600], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LinearRegression().fit(X,y)
+
+# find boundary
+a0 = model.intercept_
+a1 = model.coef_[0]
+a2 = model.coef_[1]
+
+a0bound = (0.5 - a0)/a2
+a1bound = -a1/a2
+
+xbound=np.array([min(X[:,0])-.2,max(X[:,0])+.2])
+ybound=np.array(a0bound+xbound*a1bound)
+
+plt.axes()
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+```
+
+### 20/80
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[200,800], centers=[(1,1),(3,3)], n_features=2,random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LinearRegression().fit(X,y)
+
+# find boundary
+a0 = model.intercept_
+a1 = model.coef_[0]
+a2 = model.coef_[1]
+
+a0bound = (0.5 - a0)/a2
+a1bound = -a1/a2
+
+xbound=np.array([min(X[:,0])-.2,max(X[:,0])+.2])
+ybound=np.array(a0bound+xbound*a1bound)
+
+plt.axes()
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+```
+
+### 2/98
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[20,980], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LinearRegression().fit(X,y)
+
+# find boundary
+a0 = model.intercept_
+a1 = model.coef_[0]
+a2 = model.coef_[1]
+
+a0bound = (0.5 - a0)/a2
+a1bound = -a1/a2
+
+xbound=np.array([min(X[:,0])-.2,max(X[:,0])+.2])
+ybound=np.array(a0bound+xbound*a1bound)
+
+plt.axes()
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+```
+
+The more umbalanced it becomes the harder for linear model to capture the required information
+
+
+## Apply logistic regression (LogR) to each of the cases above. Compare the results of LogR and CBLR.
+
+### 50/50 balanced
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[500,500], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LogisticRegression(random_state = 0).fit(X,y)
+
+# find boundary
+b = model.intercept_[0]
+w1, w2 = model.coef_.T
+
+# Calculate the intercept and gradient of the decision boundary.
+c = -b/w2
+m = -w1/w2
+
+# prepare the points for drawing the linear boundary
+xmin, xmax = min(X[:,0])-.2, max(X[:,0])+.2
+ymin, ymax = min(X[:,1])-.2, max(X[:,1])+.2
+xbound = np.array([xmin, xmax])
+ybound = m*xbound + c
+
+# replot, but now with the boundary
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+```
+
+### 40/60 balanced
+
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[400,600], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LogisticRegression(random_state = 0).fit(X,y)
+
+# find boundary
+b = model.intercept_[0]
+w1, w2 = model.coef_.T
+
+# Calculate the intercept and gradient of the decision boundary.
+c = -b/w2
+m = -w1/w2
+
+# prepare the points for drawing the linear boundary
+xmin, xmax = min(X[:,0])-.2, max(X[:,0])+.2
+ymin, ymax = min(X[:,1])-.2, max(X[:,1])+.2
+xbound = np.array([xmin, xmax])
+ybound = m*xbound + c
+
+# replot, but now with the boundary
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+
+```
+
+### 20/80
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[200,800], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LogisticRegression(random_state = 0).fit(X,y)
+
+# find boundary
+b = model.intercept_[0]
+w1, w2 = model.coef_.T
+
+# Calculate the intercept and gradient of the decision boundary.
+c = -b/w2
+m = -w1/w2
+
+# prepare the points for drawing the linear boundary
+xmin, xmax = min(X[:,0])-.2, max(X[:,0])+.2
+ymin, ymax = min(X[:,1])-.2, max(X[:,1])+.2
+xbound = np.array([xmin, xmax])
+ybound = m*xbound + c
+
+# replot, but now with the boundary
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+```
+
+### 2/98
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[20,980], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+
+cmap = colors.ListedColormap(['blue','orange'])
+
+model = LogisticRegression(random_state = 0).fit(X,y)
+
+# find boundary
+b = model.intercept_[0]
+w1, w2 = model.coef_.T
+
+# Calculate the intercept and gradient of the decision boundary.
+c = -b/w2
+m = -w1/w2
+
+# prepare the points for drawing the linear boundary
+xmin, xmax = min(X[:,0])-.2, max(X[:,0])+.2
+ymin, ymax = min(X[:,1])-.2, max(X[:,1])+.2
+xbound = np.array([xmin, xmax])
+ybound = m*xbound + c
+
+# replot, but now with the boundary
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$')
+plt.plot(xbound,ybound,color='red');
+
+plt.show()
+
+```
+Contrary to linear regression, Logistic model caputre more information with higher unbalance
+
+## Apply kNN with k=1, 3, 5 and 15. Observe the boundary.
+
+Lets use the more extreme case of very unbalanced
+
+```{python}
+
+def plot_classifier_boundary(model,X,y,h = .05):
+    # this function can be used with any sklearn classifier
+    # ready for two classes but can be easily extended
+    cmap_light = colors.ListedColormap(['lightsteelblue', 'peachpuff','lightgreen'])
+    x_min, x_max = X[:, 0].min()-.2, X[:, 0].max()+.2
+    y_min, y_max = X[:, 1].min()-.2, X[:, 1].max()+.2
+    # generate a grid with step h
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    # the method ravel flattens xx and yy
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    plt.contourf(xx, yy, Z, cmap=cmap_light)
+    plt.xlim((x_min,x_max))
+    plt.ylim((y_min,y_max))
+
+cmap = colors.ListedColormap(['blue','orange','green'])
+
+```
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[20,980], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+                  
+model=kNN(n_neighbors = 3).fit(X,y)
+
+plot_classifier_boundary(model,X,y)
+
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$');
+
+plt.show()
+
+```
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[20,980], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+                  
+model=kNN(n_neighbors = 5).fit(X,y)
+
+plot_classifier_boundary(model,X,y)
+
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$');
+
+plt.show()
+
+
+```
+
+
+```{python}
+
+plt.clf()
+
+X, y = make_blobs(n_samples=[20,980], centers=[(1,1),(3,3)], n_features=2,
+                  random_state=0)
+                  
+model=kNN(n_neighbors = 15).fit(X,y)
+
+plot_classifier_boundary(model,X,y)
+
+plt.scatter(X[:,0],X[:,1],color=cmap(y))
+plt.xlabel('$x_1$')
+plt.ylabel('$x_2$');
+
+plt.show()
+
+
+```
+
+
+
+## Which of the approaches is more robust to unbalanced datasets?
+
+The smallest the k the better the information since in such a not dense dataset reducing the look up region
+
+## Why does the CBLR approach fail with unbalanced datasets?
+
+
+Study the boundaries produced by kNN with different values of k on the iris dataset. Use only the two first columns as input attributes to have an easily 2-D plotable dataset.
+
+## How do the boundaries change with k? Why do they change?
+
+
+## What are the boundaries of logistic regression? How do they compare with kNN's?
